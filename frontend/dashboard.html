@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ViruScan AI — Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Changa:wght@500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="overlay"></div>
+
+<!-- ========== NAVBAR ========== -->
+<nav>
+  <ul>
+    <li><a href="dashboard.html" class="active"><i class="fa-solid fa-house"></i> Home</a></li>
+    <li><a href="#" id="dashHelpBtn"><i class="fa-solid fa-circle-question"></i> Help</a></li>
+    <li><a href="#" id="contactBtn"><i class="fa-solid fa-envelope"></i> Contact</a></li>
+    <li><a href="#" id="historyBtn"><i class="fa-solid fa-book-open"></i> History</a></li>
+    <li><a href="#" id="feedbackBtn"><i class="fa-solid fa-star"></i> Feedback</a></li>
+    <li><a href="#" id="signOut"><i class="fa-solid fa-right-from-bracket"></i> Sign out</a></li>
+  </ul>
+
+  <div class="logo">ViruScan AI</div>
+</nav>
+
+<!-- ========== HERO SCAN BOX ========== -->
+<section class="scan-section glass">
+  <h2>Scan a Website or Application</h2>
+  <p>Enter a URL or an application package name</p>
+
+  <div class="scan-box">
+    <input type="text" id="scanInput" placeholder="https://example.com OR com.app.name">
+    <button id="scanBtn" class="primary"><i class="fa-solid fa-magnifying-glass"></i> Scan</button>
+  </div>
+</section>
+
+<!-- ========== STATISTICS ========== -->
+<section class="stats glass">
+  <h2><i class="fa-solid fa-chart-pie"></i> Your Statistics</h2>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>Total Scans</h3>
+      <p id="totalScans">0</p>
+    </div>
+
+    <div class="stat-card">
+      <h3>Safe Results</h3>
+      <p id="safeCount">0</p>
+    </div>
+
+    <div class="stat-card">
+      <h3>Warnings</h3>
+      <p id="warnCount">0</p>
+    </div>
+
+    <div class="stat-card">
+      <h3>Dangerous</h3>
+      <p id="dangerCount">0</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== LAST 5 SCANS ========== -->
+<section class="history glass">
+  <h2><i class="fa-solid fa-clock-rotate-left"></i> Last 5 Scans</h2>
+
+  <ul id="lastFive"></ul>
+</section>
+
+<!-- ========== HELP MODAL DASHBOARD ========== -->
+<div id="dashHelpModal" class="modal">
+  <div class="modal-card">
+    <span class="close-btn" data-close="dashHelpModal">&times;</span>
+    <h2>Help & Support</h2>
+
+    <div class="accordion">
+
+      <!-- Item 1 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          How to scan a website or app?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            To scan a website, enter the full URL (e.g., https://example.com).  
+            To scan an application, enter its package name (e.g., com.app.name).  
+            Then press the Scan button.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          What is the Risk Score?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            The AI calculates a Risk Score from 0–100 based on safety indicators.  
+            • 0–30 = Safe  
+            • 31–70 = Warning  
+            • 71–100 = Dangerous
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          How to read the results?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            The results page shows: label, risk score, reasons for the score,  
+            and recommended AI solutions.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 4 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          How to fix Failed Scan?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            • Check URL format  
+            • Ensure package name is correct  
+            • Try again later  
+            • Check internet connection  
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Other Modals: Contact, Feedback, History (working) -->
+<div id="contactModal" class="modal">
+  <div class="modal-card">
+    <span class="close-btn" data-close="contactModal">&times;</span>
+    <h2>Contact Us</h2>
+    <input type="text" id="cName" placeholder="Your Name">
+    <input type="email" id="cEmail" placeholder="Your Email">
+    <textarea id="cMsg" placeholder="Your Message" rows="4"></textarea>
+    <button class="primary" id="sendContact">Send</button>
+  </div>
+</div>
+
+<div id="feedbackModal" class="modal">
+  <div class="modal-card">
+    <span class="close-btn" data-close="feedbackModal">&times;</span>
+    <h2>Feedback</h2>
+    <div class="stars" id="starRating">
+      <span class="star" data-value="1">&#9733;</span>
+      <span class="star" data-value="2">&#9733;</span>
+      <span class="star" data-value="3">&#9733;</span>
+      <span class="star" data-value="4">&#9733;</span>
+      <span class="star" data-value="5">&#9733;</span>
+    </div>
+    <textarea id="feedbackText" placeholder="Write your feedback..." rows="3"></textarea>
+    <button class="primary" id="submitFeedback">Submit</button>
+  </div>
+</div>
+
+<div id="historyModal" class="modal">
+  <div class="modal-card">
+    <span class="close-btn" data-close="historyModal">&times;</span>
+    <h2>History</h2>
+    <ul id="fullHistory"></ul>
+  </div>
+</div>
+
+<script>
+/* ============================
+   Utility functions
+============================ */
+const openModal = (id) => {
+  document.getElementById(id).classList.add("show");
+};
+const closeModal = (id) => {
+  document.getElementById(id).classList.remove("show");
+};
+
+/* ============================
+   NAVBAR BUTTONS
+============================ */
+
+// ---- Help ----
+document.getElementById("dashHelpBtn").addEventListener("click", () => {
+  openModal("dashHelpModal");
+});
+
+document.querySelectorAll('[data-close="dashHelpModal"]').forEach(btn => {
+  btn.addEventListener("click", () => closeModal("dashHelpModal"));
+});
+
+// ---- Contact Us ----
+document.getElementById("contactBtn").addEventListener("click", () => {
+  openModal("contactModal");
+});
+document.querySelectorAll('[data-close="contactModal"]').forEach(btn => {
+  btn.addEventListener("click", () => closeModal("contactModal"));
+});
+
+document.getElementById("sendContact").addEventListener("click", () => {
+  let name = document.getElementById("cName").value.trim();
+  let email = document.getElementById("cEmail").value.trim();
+  let msg = document.getElementById("cMsg").value.trim();
+
+  if (!name || !email || !msg) {
+    alert("⚠️ Please fill all fields.");
+    return;
+  }
+
+  alert("✅ Message sent successfully!");
+  document.getElementById("cName").value = "";
+  document.getElementById("cEmail").value = "";
+  document.getElementById("cMsg").value = "";
+  closeModal("contactModal");
+});
+
+// ---- Feedback ----
+let stars = document.querySelectorAll("#starRating .star");
+let feedbackRating = 0;
+
+document.getElementById("feedbackBtn").addEventListener("click", () => {
+  openModal("feedbackModal");
+});
+
+stars.forEach((star) => {
+  star.addEventListener("click", () => {
+    feedbackRating = parseInt(star.dataset.value);
+    stars.forEach((s) => s.classList.remove("active"));
+    stars.forEach((s) => {
+      if (parseInt(s.dataset.value) <= feedbackRating) {
+        s.classList.add("active");
+      }
+    });
+  });
+});
+let fbStars = document.querySelectorAll('#feedbackModal .star');
+let fbRating = 0;
+
+fbStars.forEach(star => {
+  star.addEventListener("click", () => {
+    fbRating = parseInt(star.dataset.value);
+
+    fbStars.forEach(s => s.classList.remove("active"));
+    fbStars.forEach(s => {
+      if (parseInt(s.dataset.value) <= fbRating) {
+        s.classList.add("active");
+      }
+    });
+  });
+});
+
+document.getElementById("submitFeedback").addEventListener("click", () => {
+  const text = document.getElementById("feedbackText").value.trim();
+
+  if (feedbackRating === 0) {
+    alert("⚠️ Please choose a rating first.");
+    return;
+  }
+
+  alert("⭐ Thanks for your feedback!");
+  feedbackRating = 0;
+  stars.forEach((s) => s.classList.remove("active"));
+  document.getElementById("feedbackText").value = "";
+  closeModal("feedbackModal");
+});
+
+document.querySelectorAll('[data-close="feedbackModal"]').forEach(btn => {
+  btn.addEventListener("click", () => closeModal("feedbackModal"));
+});
+
+// ---- History ----
+document.getElementById("historyBtn").addEventListener("click", () => {
+  loadFullHistory();
+  openModal("historyModal");
+});
+
+document.querySelectorAll('[data-close="historyModal"]').forEach(btn => {
+  btn.addEventListener("click", () => closeModal("historyModal"));
+});
+ 
+/* ============================
+   UNIVERSAL SCAN BUTTON
+============================ */
+document.getElementById("scanBtn").addEventListener("click", async () => {
+  const input = document.getElementById("scanInput").value.trim();
+
+  if (!input) return alert("Please enter a URL or package name");
+
+  let endpoint = "";
+  let bodyData = {};
+
+  // URL detection
+  if (input.startsWith("http://") || input.startsWith("https://")) {
+    endpoint = "http://127.0.0.1:8000/api/scan/url";
+    bodyData = { url: input };
+  }
+  // package detection (com.example.app)
+  else if (input.includes(".")) {
+    endpoint = "http://127.0.0.1:8000/api/scan/app";
+    bodyData = { package: input };
+  }
+  else {
+    return alert("Invalid input. Enter a full URL or a package name.");
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bodyData)
+    });
+
+    const data = await response.json();
+
+    // Save to last scan
+    localStorage.setItem("lastScan", JSON.stringify(data));
+
+    // Save to dashboard history
+    let history = JSON.parse(localStorage.getItem("history") || "[]");
+    history.unshift({
+      target: data.target_value,
+      label: data.label,
+      score: data.risk_score,
+      time: new Date().toLocaleString()
+    });
+    localStorage.setItem("history", JSON.stringify(history));
+
+    // Go to results page
+    window.location.href = "results.html";
+
+  } catch (error) {
+    alert("Scan failed: " + error.message);
+  }
+});
+
+/* ============================
+   HISTORY MANAGEMENT
+============================ */
+function saveToHistory(scan) {
+  let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+  history.unshift({
+    target: scan.target_value,
+    score: scan.risk_score,
+    label: scan.label,
+    time: new Date().toLocaleString()
+  });
+
+  if (history.length > 50) history.pop();
+
+  localStorage.setItem("history", JSON.stringify(history));
+  updateDashboardStats();
+  loadLastFive();
+}
+
+function loadLastFive() {
+  let history = JSON.parse(localStorage.getItem("history") || "[]");
+  let lastFive = document.getElementById("lastFive");
+  lastFive.innerHTML = "";
+
+  history.slice(0, 5).forEach(item => {
+    lastFive.innerHTML += `
+      <li>
+        <strong>${item.target}</strong>  
+        — Score: ${item.score}  
+        <span style="color:#a8dadc">${item.time}</span>
+      </li>`;
+  });
+}
+
+function loadFullHistory() {
+  let history = JSON.parse(localStorage.getItem("history") || "[]");
+  let box = document.getElementById("fullHistory");
+  box.innerHTML = "";
+
+  if (history.length === 0) {
+    box.innerHTML = "<li>No history yet.</li>";
+    return;
+  }
+
+  history.forEach(item => {
+    box.innerHTML += `
+      <li>
+        <b>${item.target}</b> — ${item.label} (${item.score})
+        <br><small>${item.time}</small>
+      </li>`;
+  });
+}
+
+function updateDashboardStats() {
+  let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+  document.getElementById("totalScans").textContent = history.length;
+  document.getElementById("safeCount").textContent =
+    history.filter(h => h.label === "Safe").length;
+  document.getElementById("warnCount").textContent =
+    history.filter(h => h.label === "Warning").length;
+  document.getElementById("dangerCount").textContent =
+    history.filter(h => h.label === "Dangerous").length;
+}
+
+/* ============================
+   ACCORDION (HELP)
+============================ */
+document.querySelectorAll(".acc-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const content = btn.nextElementSibling;
+
+    btn.classList.toggle("open");
+
+    if (content.style.maxHeight) {
+      content.style.maxHeight = null;
+    } else {
+      content.style.maxHeight = content.scrollHeight + "px";
+    }
+  });
+});
+
+/* ============================
+   SIGN OUT
+============================ */
+document.getElementById("signOut").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.href = "index.html";
+});
+
+/* ============================
+   INIT
+============================ */
+loadLastFive();
+updateDashboardStats();
+
+ </script> 
+</body>
+</html>

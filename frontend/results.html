@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ViruScan AI — Scan Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Changa:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="results.css">
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <!-- NAV -->
+  <nav>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a class="active" href="#">Result</a></li>
+    </ul>
+    <div class="logo">ViruScan AI</div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Target + Label -->
+    <div class="target-row">
+      <span class="pill-type">URL</span>
+      <span id="resultTarget">—</span>
+      <span id="resultLabel" class="">Analyzing…</span>
+    </div>
+
+    <!-- Score + Why -->
+    <div class="grid-2">
+      <div class="block pad">
+        <div class="score-wrap">
+          <div class="score-ring">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
+              <circle class="ring-fg" id="scoreArc" cx="60" cy="60" r="54"></circle>
+            </svg>
+            <div class="score-num" id="riskScoreValue">0</div>
+          </div>
+          <div class="score-caption">Risk Score / 100</div>
+        </div>
+      </div>
+
+      <div class="block pad">
+        <h3>📋 Why this result?</h3>
+        <ul id="whyList"></ul>
+      </div>
+    </div>
+
+    <!-- Recommended Actions -->
+    <div class="section-title">
+      <h3>💡 Recommended Actions</h3>
+      <small class="hint">AI-generated (3 prioritized)</small>
+    </div>
+    <div class="cards" id="solutionsList"><!-- cards injected --></div>
+
+    <!-- Footer actions -->
+    <div class="actions">
+      <button class="btn back" id="backBtn">← Back</button>
+      <button class="btn primary" id="saveBtn">🔖 Save to History</button>
+      <button class="btn outline" id="exportBtn">⬇️ Export JSON</button>
+    </div>
+  </div>
+
+<script>
+  /* ===== Utilities ===== */
+const $ = id => document.getElementById(id);
+const clamp01 = v => Math.max(0, Math.min(1, v));
+
+window.addEventListener("DOMContentLoaded", () => {
+  const data = JSON.parse(localStorage.getItem("lastScan") || "null");
+  if(!data || !data.target_value){
+    alert("No scan data found. Please go back and scan again.");
+    return;
+  }
+
+  /* ===== Fill header ===== */
+  $("resultTarget").textContent = data.target_value || "—";
+  const labelEl = $("resultLabel");
+  const label = (data.label || "Analyzing").toLowerCase();
+  labelEl.textContent = data.label || "Analyzing";
+  labelEl.classList.remove("label-safe","label-warning","label-dangerous");
+  if(label === "safe") labelEl.classList.add("label-safe");
+  else if(label === "warning") labelEl.classList.add("label-warning");
+  else if(label === "dangerous") labelEl.classList.add("label-dangerous");
+
+  /* ===== Score ring animation ===== */
+  const score = Number(data.risk_score ?? 0);
+  $("riskScoreValue").textContent = isFinite(score) ? score : 0;
+  const arc = $("scoreArc");
+  const r = 54, C = 2*Math.PI*r;
+  arc.style.strokeDasharray = C;
+  arc.style.strokeDashoffset = C;
+  requestAnimationFrame(()=>{
+    const pct = clamp01((score||0)/100);
+    arc.style.strokeDashoffset = (1-pct)*C;
+  });
+
+  /* ===== Why list ===== */
+  const reasons = Array.isArray(data.reasons) ? data.reasons : [];
+  const ul = $("whyList");
+  ul.innerHTML = "";
+  reasons.forEach(t=>{
+    const li = document.createElement("li");
+    li.textContent = t;
+    ul.appendChild(li);
+  });
+
+  /* ===== Solutions cards ===== */
+  const sols = Array.isArray(data.solutions) ? data.solutions : [];
+  const wrap = $("solutionsList");
+  wrap.innerHTML = "";
+  sols.forEach((s, i)=>{
+    const eff = Number(s.effectiveness ?? 0);
+    const dif = Number(s.difficulty ?? 40);
+    const tmin = Number(s.time_minutes ?? 60);
+    const tPct = clamp01(tmin/180)*100;
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h4>#${i+1} ${s.title ?? "Action"}</h4>
+      <p>${s.details ?? ""}</p>
+      <div class="meter">
+        <label>Effectiveness</label>
+        <div class="bar"><div class="fill ok" style="width:${clamp01(eff/100)*100}%"></div></div>
+      </div>
+      <div class="meter">
+        <label>Difficulty</label>
+        <div class="bar"><div class="fill warn" style="width:${clamp01(dif/100)*100}%"></div></div>
+      </div>
+      <div class="meter">
+        <label>Time</label>
+        <div class="bar"><div class="fill time" style="width:${tPct}%"></div></div>
+      </div>
+      <small>Effectiveness: ${eff|0}% | Difficulty: ${dif|0}% | Time: ${tmin|0}m</small>
+    `;
+    wrap.appendChild(card);
+  });
+
+  /* ===== Buttons ===== */
+  $("backBtn").addEventListener("click", ()=> history.length ? history.back() : location.href="dashboard.html");
+
+  $("exportBtn").addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "scan_result.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $("saveBtn").addEventListener("click", ()=>{
+    const arr = JSON.parse(localStorage.getItem("history") || "[]");
+    arr.unshift({...data, saved_at: new Date().toISOString()});
+    localStorage.setItem("history", JSON.stringify(arr.slice(0,100)));
+    alert("Saved to local history ✅");
+  });
+});
+
+</script>
+</body>
+</html>

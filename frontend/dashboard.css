@@ -1,0 +1,402 @@
+/* ======================= GLOBAL ======================= */
+body {
+  margin: 0;
+  background: url("bak.jpg") center/cover fixed;
+  font-family: "Cairo", sans-serif;
+  color: #fff;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: -1;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.107);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.45);
+}
+
+/* ======================= NAVBAR ======================= */
+nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+}
+
+nav ul {
+  display: flex;
+  gap: 14px;
+  list-style: none;
+}
+
+nav a {
+  color: #e5f6ff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+nav a.active,
+nav a:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ======================= SCAN SECTION ======================= */
+.scan-section {
+  width: 80%;
+  margin: 50px auto;
+  text-align: center;
+}
+
+.scan-box {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.scan-box input {
+  width: 380px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+}
+
+.primary {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(135deg,#1d3557,#457b9d);
+  color: white;
+  font-weight: 700;
+}
+
+.primary:hover {
+  transform: scale(1.03);
+}
+
+/* ======================= STATISTICS ======================= */
+.stats {
+  margin: 40px auto;
+  width: 80%;
+}
+
+.stats-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.stat-card { 
+  background: rgba(255,255,255,0.3365);
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+}
+
+/* ======================= LAST FIVE ======================= */
+.history {
+  margin: 40px auto;
+  width: 80%;
+}
+
+.history ul {
+  margin-top: 15px;
+  padding-left: 20px;
+  backdrop-filter: blur(14px);
+border: 1px solid rgba(255,255,255,0.10);
+}
+
+/* ======================= MODALS ======================= */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(6px);
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-card {
+  background: rgba(255,255,255,0.1);
+  padding: 25px;
+  width: 420px;
+  border-radius: 16px;
+}
+
+.close-btn {
+  float: right;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* ======================= ACCORDION ======================= */
+.accordion .acc-item {
+  margin-bottom: 10px;
+}
+
+.acc-btn {
+  width: 100%;
+  padding: 14px;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  text-align: left;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.acc-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: .35s ease;
+  background: rgba(0,0,0,0.25);
+  padding: 0 12px;
+  border-radius: 10px;
+}
+
+.acc-content p {
+  padding: 10px 0;
+  margin: 0;
+}
+#contactModal .modal-card {
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 28px;
+  border-radius: 20px;
+  width: 420px;
+  color: #fff;
+}
+
+#contactModal input,
+#contactModal textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  font-family: "Cairo", sans-serif;
+}
+
+#contactModal .primary {
+  width: 100%;
+  background: linear-gradient(135deg,#1d3557,#457b9d);
+  border: none;
+  padding: 10px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+#contactModal .modal-card {
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 28px;
+  border-radius: 20px;
+  width: 420px;
+  color: #fff;
+}
+
+#contactModal input,
+#contactModal textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  font-family: "Cairo", sans-serif;
+}
+
+#contactModal .primary {
+  width: 100%;
+  background: linear-gradient(135deg,#1d3557,#457b9d);
+  border: none;
+  padding: 10px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+#feedbackModal .modal-card {
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 28px;
+  border-radius: 20px;
+  width: 420px;
+  color: #fff;
+}
+
+#feedbackModal textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+#feedbackModal .primary {
+  width: 100%;
+  margin-top: 12px;
+  background: linear-gradient(135deg,#1d3557,#457b9d);
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+#feedbackModal .star {
+  font-size: 28px;
+  cursor: pointer;
+  color: #888;
+  transition: .2s;
+}
+
+#feedbackModal .star.active {
+  color: #ffd700;
+  text-shadow: 0 0 10px #ffd700;
+}
+/* ==== Dark Glass for Help & History ==== */
+
+#helpModal .modal-card,
+#historyModal .modal-card {
+  background: rgba(0, 0, 0, 0.55);     /* أغمق */
+  backdrop-filter: blur(16px);         /* وضوح أقوى */
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 28px 30px;
+  color: #fff;
+}
+
+/* لتوضيح الخط داخل المحتوى */
+#helpModal .modal-card p,
+#helpModal .modal-card li,
+#historyModal .modal-card p,
+#historyModal .modal-card li {
+  color: #e6f4f5;
+  line-height: 1.6;
+}
+
+/* أزرار المودال */
+#helpModal .primary,
+#historyModal .primary {
+  background: linear-gradient(135deg,#1d3557,#457b9d);
+  color: #fff;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+#helpModal .close-btn,
+#historyModal .close-btn {
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+/* ===== Dark Glass for Dashboard Help Modal ===== */
+
+#dashHelpModal .modal-card {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 22px;
+  padding: 30px;
+  color: #fff;
+}
+
+/* نصوص أوضح داخل المودال */
+#dashHelpModal .modal-card h2,
+#dashHelpModal .modal-card p {
+  color: #eaf7f8;
+}
+
+/* زر الإغلاق */
+#dashHelpModal .close-btn {
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* الأكورديون داخل Dashboard Help */
+#dashHelpModal .acc-btn {
+  background: rgba(0,0,0,0.45);
+  color: #e8f5f7;
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 16px;
+  border-radius: 14px;
+  width: 100%;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.25s;
+}
+
+#dashHelpModal .acc-btn:hover {
+  background: rgba(0,0,0,0.6);
+}
+
+/* الأيقونة */
+#dashHelpModal .acc-btn i {
+  color: #a8dadc;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+#dashHelpModal .acc-btn.open i {
+  transform: rotate(180deg);
+}
+
+/* محتوى الإجابات */
+#dashHelpModal .acc-content {
+  background: rgba(0,0,0,0.35);
+  border-left: 3px solid #a8dadc;
+  margin-top: 6px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  color: #e5f6f7;
+  line-height: 1.6;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}

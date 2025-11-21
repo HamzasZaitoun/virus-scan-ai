@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard — ViruScan AI</title>
+
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Changa:wght@500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<div class="overlay"></div>
+
+<!-- === SIDEBAR === -->
+<aside class="sidebar">
+  <div class="logo"><i class="fa-solid fa-shield-halved"></i> Admin • ViruScan</div>
+
+  <a class="navlink active" data-page="dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+  <a class="navlink" data-page="users"><i class="fa-solid fa-users"></i> Users</a>
+  <a class="navlink" data-page="feedback"><i class="fa-solid fa-comments"></i> Feedback</a>
+  <a class="navlink" data-page="scans"><i class="fa-solid fa-magnifying-glass-chart"></i> Scan Logs</a>
+
+  <div class="spacer"></div>
+  <a class="navlink signout" id="signout"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+</aside>
+
+<!-- === MAIN CONTENT === -->
+<main class="main">
+
+  <h1 class="page-title">Welcome, Admin</h1>
+  <p class="subtitle">Control center for users, logs and system monitoring.</p>
+
+  <!-- DASHBOARD OVERVIEW -->
+  <section id="page-dashboard">
+    <div class="grid">
+      <div class="card"><h3>Total Users</h3><p id="countUsers" class="num">0</p></div>
+      <div class="card"><h3>Feedback Count</h3><p id="countFeedback" class="num">0</p></div>
+      <div class="card"><h3>Scans Today</h3><p id="countScans" class="num">0</p></div>
+     <div class="card">
+  <h3>Admin Info</h3>
+  <p><strong>Username:</strong> Admin</p>
+  <p><strong>Last Login:</strong> Today</p>
+</div>+
+    </div>
+  </section>
+
+  <!-- USERS MANAGEMENT -->
+  <section id="page-users" style="display:none;">
+    <h2>Manage Users</h2>
+    <table class="table" id="usersTable">
+      <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Joined</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section id="page-feedback" style="display:none;">
+    <h2>User Feedback</h2>
+    <table class="table" id="fbTable">
+      <thead><tr><th>#</th><th>User</th><th>Rating</th><th>Comment</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- SCAN LOGS -->
+  <section id="page-scans" style="display:none;">
+    <h2>Scan History</h2>
+    <table class="table" id="scanTable">
+      <thead><tr><th>#</th><th>User</th><th>Target</th><th>Result</th><th>Date</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+</main>
+
+<script>
+// Sample Data (بدون Backend الآن)
+let users = [
+  {name:'Jomana Jber', email:'jomana@mail.com', joined:'2025-10-10'},
+  {name:'Ahmad Salem', email:'ahmad@mail.com', joined:'2025-10-21'}
+];
+let feedback = [
+  {user:'Guest', rating:5, comment:'Amazing project!'},
+  {user:'Lana', rating:3, comment:'Good but needs improvements'}
+];
+let scans = [
+  {user:'Jomana', target:'https://example.com', result:'Safe', date:'2025-11-09'}
+];
+
+// Fill Dashboard Stats
+function refreshStats(){
+  document.getElementById("countUsers").textContent = users.length;
+  document.getElementById("countFeedback").textContent = feedback.length;
+  document.getElementById("countScans").textContent = scans.length;
+}
+
+// Render Tables
+function renderUsers(){
+  document.querySelector("#usersTable tbody").innerHTML = users.map((u,i)=>`
+    <tr><td>${i+1}</td><td>${u.name}</td><td>${u.email}</td><td>${u.joined}</td></tr>
+  `).join("");
+}
+function renderFeedback(){
+  document.querySelector("#fbTable tbody").innerHTML = feedback.map((f,i)=>`
+    <tr><td>${i+1}</td><td>${f.user}</td><td>${"★".repeat(f.rating)}</td><td>${f.comment}</td></tr>
+  `).join("");
+}
+function renderScans(){
+  document.querySelector("#scanTable tbody").innerHTML = scans.map((s,i)=>`
+    <tr><td>${i+1}</td><td>${s.user}</td><td>${s.target}</td><td>${s.result}</td><td>${s.date}</td></tr>
+  `).join("");
+}
+
+refreshStats(); renderUsers(); renderFeedback(); renderScans();
+
+// Switch Pages
+document.querySelectorAll(".navlink").forEach(link=>{
+  link.onclick = () => {
+    document.querySelectorAll("section").forEach(s=>s.style.display="none");
+    document.querySelectorAll(".navlink").forEach(a=>a.classList.remove("active"));
+    link.classList.add("active");
+    document.getElementById("page-"+link.dataset.page).style.display="block";
+  };
+});
+
+// Sign Out
+document.getElementById("signout").onclick = ()=> window.location.href="index.html";
+</script>
+
+</body>
+</html>

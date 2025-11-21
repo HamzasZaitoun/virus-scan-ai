@@ -1,0 +1,496 @@
+/* ---------- Reset ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; font-family: "Cairo", sans-serif; background: #071021; color: #fff; }
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Background + overlay ---------- */
+body {
+  background: url('bak.jpg') center/cover no-repeat fixed;
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55); /* أغمق شوي */
+  z-index: -1;
+}
+
+/* ---------- Navbar ---------- */
+nav {
+  position: fixed;
+  left: 0; top: 0; width: 100%; height: 65px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 28px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+  z-index: 40;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+.logo {
+  font-family: "Changa", sans-serif;
+  font-size: 26px;
+  color: rgba(168,218,220,0.95);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.06);
+}
+.dropdown { position: relative; }
+.dropbtn {
+  background: transparent; border: none; color: #f1faee; font-size: 18px; cursor: pointer;
+  font-family: "Cairo", sans-serif; padding: 6px 10px; border-radius: 8px;
+}
+.dropbtn:hover { color: #a8dadc; }
+.dropdown-content {
+  display: none;
+  position: absolute; left: 0; top: 44px;
+  background: rgba(255,255,255,0.06);
+  min-width: 180px; border-radius: 10px; backdrop-filter: blur(8px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45); z-index: 50; overflow: hidden;
+}
+.dropdown:hover .dropdown-content { display: block; }
+.dropdown-content a { display: block; padding: 10px 14px; font-size: 14px; color: #f1faee; }
+.dropdown-content a:hover { background: rgba(255,255,255,0.08); }
+
+/* ---------- Navbar Links ---------- */
+nav ul {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 35px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #a8dadc;
+  font-weight: 600;
+  font-family: "Changa", sans-serif;
+  transition: 0.3s;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+nav ul li a:hover,
+nav ul li a.active {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* أيقونات النافبار */
+nav ul li a i {
+  font-size: 19px;
+}
+/* ---------- Hero ---------- */
+.hero {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding-top: 80px;
+}
+.glass-box {
+  background: rgba(0,0,0,0.4); /* جعل الشفافية أغمق */
+  padding: 56px 60px;
+  border-radius: 22px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+  max-width: 780px;
+  text-align: center;
+}
+.glass-box h1 {
+  font-family: "Changa", sans-serif;
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+.glass-box h1 span {
+  color: #a8dadc;
+  text-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+.glass-box p { margin: 16px 0 26px; color: #f1faee; letter-spacing: 0.6px; }
+
+/* ---------- Buttons ---------- */
+.side-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.signin {
+  background: linear-gradient(135deg, #1d3557, #457b9d);
+  color: #fff; border: none; padding: 12px 48px; border-radius: 50px;
+  font-weight: 600; cursor: pointer; font-size: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  transition: all .25s;
+}
+.signin:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+.signup { color: #a8dadc; font-weight: 500; }
+.btn-admin {
+  background: rgba(168, 218, 220, 0.9);
+  border: none;
+  color: #1a1a1a;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-admin:hover {
+  color: #a8dadc;
+}
+
+/* Modal Styling */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(35, 33, 33, 0.6);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(157, 143, 143, 0.3);
+  width: 300px;
+  text-align: center;
+  color:#a8dadc;
+}
+.modal-content input {
+  width: 90%;
+  padding: 8px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+}
+.modal-content button {
+  width: 100%;
+  padding: 10px;
+  background: #a8dadc;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.modal-content button:hover {
+  background: #525f84;
+}
+.close {
+  position: absolute;
+  top: 10px; right: 20px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* ---------- Modals common ---------- */
+.modal {
+  display: none; position: fixed; inset: 0; z-index: 60;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55); /* أكثر تعتيم */
+}
+.modal.show { display: flex; animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: scale(.98); } to { opacity:1; transform: scale(1); } }
+
+.modal-card {
+  width: 420px;
+  background: rgba(0,0,0,0.45); /* معتمة أكثر */
+  border-radius: 18px; padding: 28px; position: relative;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+  backdrop-filter: blur(12px);
+  color: #fff; font-family: "Cairo", sans-serif;
+}
+.modal-card h2 { font-family: "Changa", sans-serif; margin-bottom: 8px; color: rgba(168,218,220,0.95); }
+.close-btn { position: absolute; right: 14px; top: 10px; font-size: 20px; cursor: pointer; color: #a8dadc; }
+
+/* ---------- Form Inputs ---------- */
+.modal-card input, .modal-card select, .modal-card textarea {
+  width: 100%; padding: 10px; border-radius: 10px; border: none;
+  background: rgba(255,255,255,0.12); color: #fff; margin: 8px 0; font-size: 15px; outline: none;
+}
+.modal-card input:focus, .modal-card textarea:focus {
+  box-shadow: 0 0 12px rgba(168,218,220,0.4); background: rgba(255,255,255,0.2);
+}
+
+/* ---------- Rows ---------- */
+.row { display: flex; gap: 10px; align-items: center; }
+.row .half { flex: 1; }
+
+/* ---------- Error & Info ---------- */
+.error { color: #ffd2d2; background: rgba(255,0,0,0.06); padding: 8px; border-radius: 8px; font-size: 13px; margin-top: 6px; display: none; }
+.info { color: #bfe8e8; font-size: 14px; margin: 8px 0; }
+.small-muted { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+/* ---------- Buttons inside modals ---------- */
+.modal-card button.primary {
+  width: 100%; padding: 12px; border-radius: 10px; border: none;
+  margin-top: 8px; background: linear-gradient(135deg,#1d3557,#457b9d);
+  cursor: pointer; font-weight: 600;
+}
+.modal-card button.ghost {
+  background: transparent; border: 1px solid rgba(255,255,255,0.08);
+  color: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer;
+}
+
+/* ---------- Feedback stars ---------- */
+.stars {
+  display: flex; justify-content: center; gap: 8px;
+  font-size: 30px; cursor: pointer;
+  color: rgba(255,255,255,0.12);
+  margin: 10px 0; transition: color 0.2s;
+}
+.star.active { color: #f5c518; }
+.star:hover, .star:hover ~ .star { color: #f5c518; }
+
+/* ---------- Phone container ---------- */
+.phone-container { display: flex; gap: 10px; align-items: center; width: 100%; }
+.phone-container select, .phone-container input {
+  flex: 1; padding: 12px; border: none; border-radius: 10px;
+  background: rgba(255,255,255,0.15); color:#3171bb; font-size: 15px; outline:none; transition:0.3s;
+}
+.phone-container select:focus, .phone-container input:focus {
+  background: rgba(255,255,255,0.25);
+  box-shadow: 0 0 8px rgba(168,218,220,0.4);
+}
+
+/* ---------- Verification code section ---------- */
+#codeSection input {
+  width: 100%; padding: 10px; border-radius: 8px; border: none; outline: none;
+  font-size: 15px; background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 10px;
+}
+#codeSection button {
+  background: #1d3557; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 18px; cursor: pointer; transition: 0.3s;
+}
+#codeSection button:hover { background: #457b9d; }
+
+/* ---------- Language Modal ---------- */
+#languageModal .modal-card {
+  width: 360px; background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px); border-radius: 16px; padding: 24px;
+  border: 1px solid rgba(255,255,255,0.15); color: #fff; text-align: center; position: relative;
+}
+#languageModal .close-btn {
+  position: absolute; top: 10px; right: 14px; cursor: pointer; font-size: 20px; color: #fff;
+  transition: 0.3s;
+}
+#languageModal .close-btn:hover { color: #ff6868; transform: scale(1.2); }
+.language-options { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 15px 0; }
+.language-options label { font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.language-options input[type="radio"] { transform: scale(1.2); accent-color: #1d3557; }
+#saveLang { background: #1d3557; color: #ffffffcc; border: none; border-radius: 8
+px; padding: 10px 20px; cursor: pointer; transition: 0.3s; }
+#saveLang:hover { background: #457b9d; color: #fff; }
+/* ---------- About Us Button ---------- */
+.about-btn {
+  background: transparent;
+  border: none;
+  color: #f1faee;
+  font-size: 18px;
+  cursor: pointer;
+  font-family: "Cairo", sans-serif;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.about-btn:hover {
+  color: #a8dadc;
+}
+
+/* ---------- About Us Modal ---------- */
+#aboutModal .modal-card {
+  width: 500px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 18px;
+  padding: 30px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  color: #fff;
+  text-align: center;
+}
+
+#aboutModal h2 {
+  font-family: "Changa", sans-serif;
+  color: rgba(168,218,220,0.95);
+  margin-bottom: 14px;
+}
+
+#aboutModal p {
+  font-size: 15px;
+  color: #f1faee;
+  line-height: 1.6;
+}
+/* ---------- About Us Modal (Team Section) ---------- */
+#aboutModal h3 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  color: #a8dadc;
+  font-family: "Changa", sans-serif;
+  font-size: 22px;
+}
+
+.team {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.member {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  width: 130px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  transition: 0.3s;
+}
+
+.member:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.member img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+  border: 2px solid #a8dadc;
+}
+
+.member h4 {
+  font-size: 15px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.member p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+/* ---------- Team Member Glow Effect ---------- */
+.member img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+  border: 2px solid #a8dadc;
+  box-shadow: 0 0 10px rgba(168,218,220,0.3);
+  transition: 0.4s ease;
+}
+
+.member:hover img {
+  box-shadow: 0 0 20px rgba(168,218,220,0.7), 0 0 35px rgba(168,218,220,0.4);
+  transform: scale(1.07);
+  border-color: #a8dadc;
+  animation: glowPulse 1.5s infinite alternate;
+}
+
+@keyframes glowPulse {
+  from {
+    box-shadow: 0 0 12px rgba(168,218,220,0.5), 0 0 25px rgba(168,218,220,0.3);
+  }
+  to {
+    box-shadow: 0 0 22px rgba(168,218,220,0.8), 0 0 40px rgba(168,218,220,0.5);
+  }
+}
+/* ---------- Admin Button ---------- */
+.admin-btn {
+  background: linear-gradient(135deg, #8b1d1d, #e63946);
+  color: #fff;
+  border: none;
+  padding: 12px 48px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  transition: .3s;
+}
+
+.admin-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(230,57,70,0.4);
+}
+/* ---------- HELP MODAL ---------- */
+.help-card {
+  max-width: 520px;
+  padding: 28px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  color: #fff;
+}
+
+.help-card h2 {
+  text-align: center;
+  margin-bottom: 18px;
+  font-family: "Changa", sans-serif;
+  letter-spacing: .6px;
+  color: #a8dadc;
+}
+
+/* Accordion Area */
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acc-item {
+  background: rgba(255,255,255,0.06);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.acc-btn {
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  color: #fff;
+  text-align: left;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.acc-btn i {
+  transition: transform .3s ease;
+}
+
+.acc-btn.active i {
+  transform: rotate(180deg);
+}
+
+.acc-content {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 18px;
+  background: rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  transition: max-height .35s ease;
+}
+
+.acc-content p {
+  padding: 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: .92;
+}

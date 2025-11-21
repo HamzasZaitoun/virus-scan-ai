@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ViruScan AI — Auth Demo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Changa:wght@400;500;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+  <!-- NAVIGATION -->
+<nav>
+  <ul>
+   <li class="dropdown">
+  <a href="#" id="helpBtn"><i class="fa-solid fa-circle-question"></i> Help</a>
+</li>
+    <li><a href="#" id="aboutBtn"><i class="fa-solid fa-circle-info"></i> About Us</a></li>
+  </ul>
+  <div class="logo">ViruScan AI</div> 
+</nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="glass-box">
+      <h1>Welcome to <span>ViruScan AI</span></h1>
+      <p>Smart protection powered by Artificial Intelligence.</p>
+
+     <div class="side-buttons">
+  <button class="signin" id="openLogin">Sign In</button>
+   <button class="signin admin-btn" id="openAdmin">Admin</button>
+  <a class="signup" id="openSignup" href="#">Create an account</a>
+</div>
+    </div>
+    </div>
+  </section>
+<!-- ====== AUTH MODAL (Login / Signup) ====== -->
+<div id="authModal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <span class="close-btn" data-close>&times;</span>
+    <h2 id="authTitle">Sign in to <span style="color:#a8dadc">ViruScan AI</span></h2>
+
+    <form id="authForm">
+      <!-- login fields -->
+      <div id="loginFields">
+        <input type="email" id="loginEmail" placeholder="Email address" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <div class="small-muted" style="margin-top:6px">
+          Don't have an account? <a href="#" id="switchToSignup">Create one</a>
+        </div>
+        <button type="button" class="primary" id="loginBtn" style="margin-top:12px">Sign in</button>
+        <div style="margin-top:8px;text-align:center">
+          <a href="#" id="forgotPassword">Forgot password?</a>
+        </div>
+      </div>
+
+      <!-- signup fields -->
+      <div id="signupFields" style="display:none;margin-top:8px">
+        <input type="text" id="suFullName" placeholder="Full name" required />
+        <input type="email" id="suEmail" placeholder="Email address" required />
+
+        <div class="row">
+          <input type="password" id="suPassword" class="half" placeholder="Password" required />
+          <input type="password" id="suConfirm" class="half" placeholder="Confirm password" required />
+        </div>
+
+        <!-- Phone (بلد + رقم) بدون أي وسوم مودال داخلها -->
+        <div class="phone-container">
+          <div class="country-select">
+            <select id="countryCode">
+              <option value="JO" data-code="+962" data-flag="jo">Jordan (+962)</option>
+              <option value="SA" data-code="+966" data-flag="sa">Saudi Arabia (+966)</option>
+              <option value="EG" data-code="+20"  data-flag="eg">Egypt (+20)</option>
+              <option value="US" data-code="+1"   data-flag="us">USA (+1)</option>
+            </select>
+          </div>
+          <input type="text" id="suPhone" placeholder="Enter phone number" required />
+        </div>
+
+        <div id="suError" class="error" style="display:none;"></div>
+        <button type="button" class="primary" id="signupBtn" style="margin-top:10px">Create account</button>
+        <div class="small-muted" style="margin-top:8px">
+          Already registered? <a href="#" id="switchToLogin">Sign in</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Login Modal (منفصل عن authModal) -->
+<div id="adminModal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <span class="close-btn" id="closeAdmin">&times;</span>
+    <h2>Admin Login</h2>
+    <input type="email" id="adminEmail" placeholder="Admin Email" />
+    <input type="password" id="adminPass" placeholder="Password" />
+    <button class="primary" id="adminLoginBtn">Sign in</button>
+  </div>
+</div>
+
+<!-- ====== Forgot Password Modal ====== -->
+<div id="forgotModal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <span class="close-btn" data-close>&times;</span>
+    <h2>Reset your password 🔒</h2>
+    <p style="margin-bottom:10px;color:#ddd;">Enter your email or phone number to receive a reset code.</p>
+
+    <form id="forgotForm">
+      <input type="text" id="forgotInput" placeholder="Email or phone number" required />
+      <button type="button" class="primary" id="sendReset">Send reset code</button>
+
+      <!-- الخطوة الثانية: إدخال الكود -->
+      <div id="codeSection" style="display:none; margin-top:15px;">
+        <input type="text" id="resetCode" placeholder="Enter verification code" maxlength="6" />
+        <button type="button" class="primary" id="verifyCode">Verify code</button>
+      </div>
+
+      <div id="forgotMsg" class="success" style="display:none;margin-top:10px;"></div>
+    </form>
+  </div>
+</div>">
+
+ <!-- About Us Modal -->
+<div id="aboutModal" class="modal">
+  <div class="modal-card">
+    <span class="close-btn" id="closeAbout">&times;</span>
+    <h2>About Us</h2>
+    <p>
+      <strong>ViruScan AI</strong> is an intelligent web-based system designed to detect and analyze
+      potential viruses using artificial intelligence. It helps users maintain cybersecurity
+      awareness through a simple and modern interface.
+    </p>
+
+    <h3>Our Team</h3>
+    <div class="team">
+      <div class="member">
+        <img src="my.png" alt="Member 1">
+        <h4>Jomana Jber</h4>
+        <p>Developer & Designer</p>
+      </div>
+      <div class="member">
+        <img src="team2.jpg" alt="Member 2">
+        <h4>Qusai Bassam</h4>
+        <p>Frontend Developer</p>
+      </div>
+      <div class="member">
+        <img src="team3.jpg" alt="Member 3">
+        <h4>Leena Khaled</h4>
+        <p>Backend Engineer</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+  <div class="modal-card">
+    <span class="close-btn" data-close="helpModal">&times;</span>
+    <h2>Help & Support</h2>
+
+    <div class="accordion">
+
+      <!-- Item 1 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          How to create your account?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            If you already have an account, simply enter your email or phone number along with your password.  
+            To create a new account, click on “Sign Up”, then enter your full name, email address, phone number, and password.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          How to scan websites or apps?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            After logging in, copy the URL you want to scan or enter the application package name.  
+            ViruScan AI will analyze it instantly and show you the risk score and recommended solutions.
+          </p>
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="acc-item">
+        <button class="acc-btn">
+          How to contact support?
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="acc-content">
+          <p>
+            You can contact our support team via email or the Contact Us page:  
+            <br><br>
+            📧 Email: <b>ViruScanAI@support.com</b><br>
+            📱 Phone: <b>+962 7 XXX XXXX</b>
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /* ---------------------------
+      Modal + Auth behavior
+     --------------------------- */
+  const showModal = (el) => { el.classList.add('show'); el.setAttribute('aria-hidden','false'); }
+  const hideModal = (el) => { el.classList.remove('show'); el.setAttribute('aria-hidden','true'); }
+
+  const authModal = document.getElementById('authModal');
+
+  // openers
+  document.getElementById('openLogin').addEventListener('click', ()=> {
+    document.getElementById('loginFields').style.display='block';
+    document.getElementById('signupFields').style.display='none';
+    document.getElementById('authTitle').innerHTML = 'Sign in to <span style="color:#a8dadc">ViruScan AI</span>';
+    showModal(authModal);
+  });
+
+  document.getElementById('openSignup').addEventListener('click', (e)=> {
+    e.preventDefault();
+    document.getElementById('signupFields').style.display='block';
+    document.getElementById('loginFields').style.display='none';
+    document.getElementById('authTitle').innerHTML = 'Create your <span style="color:#a8dadc">ViruScan AI</span> account';
+    showModal(authModal);
+  });
+
+  // Switch links
+  document.getElementById('switchToSignup').addEventListener('click', (e)=> {
+    e.preventDefault();
+    document.getElementById('loginFields').style.display='none';
+    document.getElementById('signupFields').style.display='block';
+    document.getElementById('authTitle').innerHTML = 'Create your <span style="color:#a8dadc">ViruScan AI</span> account';
+  });
+  document.getElementById('switchToLogin').addEventListener('click', (e)=> {
+    e.preventDefault();
+    document.getElementById('signupFields').style.display='none';
+    document.getElementById('loginFields').style.display='block';
+    document.getElementById('authTitle').innerHTML = 'Sign in to <span style="color:#a8dadc">ViruScan AI</span>';
+  });
+
+  // Sign up behavior
+  const signupBtn = document.getElementById('signupBtn');
+  const suPassword = document.getElementById('suPassword');
+  const suConfirm = document.getElementById('suConfirm');
+  const suFullName = document.getElementById('suFullName');
+  const suEmail = document.getElementById('suEmail');
+  const suPhone = document.getElementById('suPhone');
+  const suError = document.getElementById('suError');
+  const countryCode = document.getElementById('countryCode');
+
+  signupBtn.addEventListener('click', ()=>{
+    suError.style.display='none';
+    const name = suFullName.value.trim();
+    const email = suEmail.value.trim();
+    const pass = suPassword.value;
+    const confirm = suConfirm.value;
+    const phone = suPhone.value.trim();
+    const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
+
+    if(!name || !email || !pass || !confirm || !phone){
+      suError.textContent = '⚠️ Please fill all required fields.';
+      suError.style.display='block';
+      return;
+    }
+    if(pass.length < 6){
+      suError.textContent = '⚠️ Password must be at least 6 characters.';
+      suError.style.display='block';
+      return;
+    }
+    if(pass !== confirm){
+      suError.textContent = '⚠️ Passwords do not match.';
+      suError.style.display='block';
+      return;
+    }
+    // دمج رمز الدولة مع الرقم
+    const fullPhone = prefix + phone;
+
+    // عند تغيير الدولة، حدّث رمز الدولة تلقائيًا داخل خانة رقم الهاتف
+    countryCode.addEventListener('change', () => {
+      const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
+  // إذا الخانة فاضية أو فيها رمز سابق، استبدله
+  if (suPhone.value.startsWith('+')) {
+    suPhone.value = prefix + suPhone.value.replace(/^\+\d+/, '');
+  } else {
+    suPhone.value = prefix;
+  }
+});
+
+// عند التركيز على الخانة، إذا كانت فاضية، أضف رمز الدولة الحالي
+suPhone.addEventListener('focus', () => {
+  const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
+  if (!suPhone.value.startsWith('+')) {
+    suPhone.value = prefix;
+  }
+});
+
+// منع كتابة أحرف غير الأرقام بعد الرمز
+suPhone.addEventListener('input', () => {
+  const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
+  suPhone.value = prefix + suPhone.value.slice(prefix.length).replace(/\D/g, '');
+});
+
+    alert('✅ Account created successfully!\nEmail: ' + email + '\nPhone: ' + fullPhone);
+    window.location.href = 'dashboard.html';
+    hideModal(authModal);
+    suFullName.value = suEmail.value = suPassword.value = suConfirm.value = suPhone.value = '';
+  });
+  /* ---------------------------
+      Sign in behavior → Redirect Dashboard
+  --------------------------- */
+  const loginBtn = document.getElementById('loginBtn');
+  loginBtn.addEventListener('click', ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPassword').value;
+    if(!email || !pass){ alert('Please fill all fields'); return; }
+    window.location.href = 'dashboard.html';
+  });
+ document.addEventListener('DOMContentLoaded', () => {
+  const adminBtn = document.getElementById('adminBtn');
+  const adminModal = document.getElementById('adminModal');
+  const closeAdmin = document.getElementById('closeAdmin');
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  const adminMsg = document.getElementById('adminMsg');});
+
+  //const adminModal = document.getElementById("adminModal");
+  document.getElementById("openAdmin").addEventListener("click", ()=>{
+    adminModal.classList.add("show");
+  });
+
+document.getElementById("closeAdmin").addEventListener("click", ()=>{
+  adminModal.classList.remove("show");
+});
+
+// تسجيل دخول الإدمن (مؤقت بدون backend)
+document.getElementById("adminLoginBtn").addEventListener("click", ()=> {
+  const email = document.getElementById("adminEmail").value;
+  const pass = document.getElementById("adminPass").value;
+
+  if(email === "admin@viruscan.com" && pass === "admin123"){
+    window.location.href = "admin-dashboard.html";
+  } else {
+    alert("❌ Incorrect admin login");
+  }
+});
+
+  /* ---------------------------
+      ✅ إضافات جديدة
+  --------------------------- */
+
+  // تفعيل زر × لإغلاق المودال
+  document.querySelectorAll('[data-close]').forEach(btn=>{
+    btn.addEventListener('click', ()=> hideModal(authModal));
+  });
+
+  // إغلاق المودال عند الضغط خارج الكارد
+  window.addEventListener('click', (e)=>{
+    if(e.target === authModal){ hideModal(authModal); }
+  });
+
+  // تعبئة رمز الدولة تلقائيًا في خانة الهاتف
+  countryCode.addEventListener('change', ()=>{
+    const code = countryCode.selectedOptions[0].getAttribute('data-code');
+    suPhone.value = code + ' ';
+    suPhone.focus();
+  });
+ /* ---------------------------
+    Forgot Password Behavior
+--------------------------- */
+const forgotPassword = document.getElementById('forgotPassword');
+const forgotModal = document.getElementById('forgotModal');
+const sendReset = document.getElementById('sendReset');
+const verifyCode = document.getElementById('verifyCode');
+const forgotInput = document.getElementById('forgotInput');
+const forgotMsg = document.getElementById('forgotMsg');
+const codeSection = document.getElementById('codeSection');
+const resetCode = document.getElementById('resetCode');
+
+let generatedCode = null;
+
+// فتح نافذة "نسيت كلمة السر"
+forgotPassword.addEventListener('click', (e)=>{
+  e.preventDefault();
+  forgotInput.value = '';
+  forgotMsg.style.display = 'none';
+  codeSection.style.display = 'none';
+  resetCode.value = '';
+  showModal(forgotModal);
+});
+
+// إرسال الكود
+sendReset.addEventListener('click', ()=>{
+  const value = forgotInput.value.trim();
+  if(!value){
+    alert('⚠️ Please enter your email or phone number.');
+    return;
+  }
+
+  // إنشاء كود عشوائي
+  generatedCode = Math.floor(100000 + Math.random() * 900000);
+  forgotMsg.textContent = `✅ A reset code has been sent to ${value}`;
+  forgotMsg.style.display = 'block';
+  forgotMsg.style.color = '#9aff9a';
+  
+  // إظهار خانة الكود
+  codeSection.style.display = 'block';
+  console.log("Generated code (for testing):", generatedCode);
+});
+
+// التحقق من الكود
+verifyCode.addEventListener('click', ()=>{
+  if(resetCode.value.trim() === ''){
+    alert('⚠️ Please enter the verification code.');
+    return;
+  }
+
+  if(parseInt(resetCode.value) === generatedCode){
+    forgotMsg.textContent = '✅ Code verified! You can now reset your password.';
+    forgotMsg.style.display = 'block';
+    forgotMsg.style.color = '#9aff9a';
+  } else {
+    forgotMsg.textContent = '❌ Incorrect code. Please try again.';
+    forgotMsg.style.display = 'block';
+    forgotMsg.style.color = '#ff9999';
+  }
+});
+
+// زر الإغلاق
+document.querySelector('#forgotModal .close-btn').addEventListener('click', ()=>{
+  hideModal(forgotModal);
+}); 
+const homeBtn = document.querySelector('nav ul li a.active');
+const dropdown = document.querySelector('.dropdown-content');
+/* ---------------------------
+   HELP MODAL OPEN / CLOSE
+--------------------------- */
+
+const helpBtn = document.getElementById("helpBtn");
+const helpModal = document.getElementById("helpModal");
+
+// فتح المودال
+helpBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  helpModal.classList.add("show");
+});
+
+// إغلاق المودال
+helpModal.querySelector("[data-close]").addEventListener("click", () => {
+  helpModal.classList.remove("show");
+});
+
+// إغلاق عند الضغط خارج الكارد
+window.addEventListener("click", (e) => {
+  if (e.target === helpModal) helpModal.classList.remove("show");
+});
+
+/* ---------------------------
+   Accordion Logic
+--------------------------- */
+document.querySelectorAll(".acc-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("active");
+    const content = btn.nextElementSibling;
+
+    if (btn.classList.contains("active")) {
+      content.style.maxHeight = content.scrollHeight + "px";
+    } else {
+      content.style.maxHeight = "0px";
+    }
+  });
+});
+
+// About Us modal
+  const aboutModal = document.getElementById("aboutModal");
+  const aboutBtn = document.getElementById("aboutBtn");
+  const closeAbout = document.getElementById("closeAbout");
+
+  // فتح مودال About Us
+  aboutBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    aboutModal.style.display = "flex";
+  });
+
+  // إغلاق المودال
+  closeAbout.addEventListener("click", () => {
+    aboutModal.style.display = "none";
+  });
+  // إذا ضغط المستخدم خارج البطاقة، يغلق المودال
+  window.addEventListener("click", (e) => {
+    if (e.target === aboutModal) {
+      aboutModal.style.display = "none";
+    }
+  });
+
+// عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', ()=>{
+  const savedLang = localStorage.getItem('siteLanguage') || 'en';
+  applyLanguage(savedLang);
+});
+
+const historyModal = document.getElementById('historyModal');
+
+// ربط زر History بالمودال
+document.getElementById('historyBtn').addEventListener('click', e => {
+  e.preventDefault();
+  showModal(historyModal);
+
+});
+
+// زر الإغلاق
+historyModal.querySelector('.close-btn').addEventListener('click', () => {
+  hideModal(historyModal);
+});
+
+// إغلاق عند الضغط خارج المودال
+window.addEventListener('click', e => {
+  if(e.target === historyModal) hideModal(historyModal);
+});
+const contactModal = document.getElementById('contactModal');
+const sendContact = document.getElementById('sendContact');
+
+document.getElementById('contactBtn').addEventListener('click', e => {
+  e.preventDefault();
+  showModal(contactModal);
+});
+
+// زر الإرسال
+sendContact.addEventListener('click', () => {
+  const name = document.getElementById('contactName').value.trim();
+  const email = document.getElementById('contactEmail').value.trim();
+  const message = document.getElementById('contactMessage').value.trim();
+
+  if(!name || !email || !message){
+    alert('⚠️ Please fill all fields before sending.');
+    return;
+  }
+
+  alert(`✅ Message sent successfully!\nName: ${name}\nEmail: ${email}\nMessage: ${message}`);
+  
+  // مسح الحقول بعد الإرسال
+  document.getElementById('contactForm').reset();
+  hideModal(contactModal);
+});
+
+// زر الإغلاق
+contactModal.querySelector('.close-btn').addEventListener('click', () => {
+  hideModal(contactModal);
+});
+
+// إغلاق عند الضغط خارج المودال
+window.addEventListener('click', e => {
+  if(e.target === contactModal) hideModal(contactModal);
+});
+const feedbackModal = document.getElementById('feedbackModal');
+const stars = document.querySelectorAll('#starRating .star');
+let selectedRating = 0;
+
+// تفعيل زر Feedback من القائمة
+document.getElementById('feedbackBtn').addEventListener('click', e => {
+  e.preventDefault();
+  showModal(feedbackModal);
+});
+
+// تفعيل النجوم
+stars.forEach(star => {
+  star.addEventListener('click', () => {
+    selectedRating = parseInt(star.getAttribute('data-value'));
+    stars.forEach(s => s.classList.remove('active'));
+    stars.forEach(s => {
+      if(parseInt(s.getAttribute('data-value')) <= selectedRating) {
+        s.classList.add('active');
+      }
+    });
+  });
+});
+
+// زر إرسال Feedback
+document.getElementById('submitFeedback').addEventListener('click', () => {
+  const text = document.getElementById('feedbackText').value.trim();
+
+  if(selectedRating === 0){
+    alert('⚠️ Please select a rating before submitting!');
+    return;
+  }
+
+  alert(`✅ Thanks for your feedback!\nRating: ${selectedRating} ⭐\nMessage: ${text || 'No message provided'}`);
+
+  // إعادة ضبط المودال بعد الإرسال
+  document.getElementById('feedbackText').value = '';
+  selectedRating = 0;
+  stars.forEach(s => s.classList.remove('active'));
+  hideModal(feedbackModal);
+});
+
+// زر الإغلاق
+feedbackModal.querySelector('.close-btn').addEventListener('click', () => {
+  hideModal(feedbackModal);
+});
+
+// إغلاق عند الضغط خارج المودال
+window.addEventListener('click', e => {
+  if(e.target === feedbackModal) hideModal(feedbackModal);
+});
+
+</script>
+</body>
+</html>

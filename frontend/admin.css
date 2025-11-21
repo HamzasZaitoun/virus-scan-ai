@@ -1,0 +1,41 @@
+body{
+  margin:0;
+  font-family:"Cairo",sans-serif;
+  background:url('bak.jpg') center/cover fixed;
+  color:white;
+}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:-1}
+
+.sidebar{
+  width:240px; height:100vh; position:fixed; top:0; left:0;
+  background:rgba(0,0,0,.45); backdrop-filter:blur(10px);
+  padding:20px; display:flex; flex-direction:column;
+}
+.logo{font-family:"Changa"; font-size:22px; color:#a8dadc; margin-bottom:20px;}
+
+.navlink{
+  padding:10px 12px; border-radius:10px; color:white; text-decoration:none;
+  display:flex; gap:10px; align-items:center; transition:.3s;
+}
+.navlink:hover{background:rgba(255,255,255,.12)}
+.navlink.active{background:#a8dadc; color:#000; font-weight:700}
+
+.main{margin-left:260px; padding:30px}
+.page-title{margin:0;}
+.subtitle{opacity:.8; margin-bottom:20px;}
+
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px;}
+.card{
+  background:rgba(255,255,255,.08); backdrop-filter:blur(10px);
+  padding:18px; border-radius:14px; text-align:center;
+}
+.num{font-size:28px; font-weight:700; margin-top:10px}
+.badge.ok{background:#20c99733; padding:6px 12px; border-radius:10px; color:#20c997}
+
+.table{
+  width:100%; margin-top:15px; background:rgba(255,255,255,.08);
+  border-radius:10px; overflow:hidden; backdrop-filter:blur(10px);
+}
+.table th,.table td{
+  padding:12px; border-bottom:1px solid rgba(255,255,255,.12)
+}
