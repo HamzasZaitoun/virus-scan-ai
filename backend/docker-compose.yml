@@ -1,0 +1,78 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: viruscan_db
+    restart: always
+    environment:
+      POSTGRES_USER: viruscan_user
+      POSTGRES_PASSWORD: viruscan_pass_2024
+      POSTGRES_DB: viruscan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viruscan_user -d viruscan_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - viruscan_network
+
+  backend:
+    image: python:3.11-slim
+    container_name: viruscan_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://viruscan_user:viruscan_pass_2024@db:5432/viruscan_db
+      FLASK_ENV: production
+      FLASK_APP: app.py
+      SECRET_KEY: change-this-to-random-secret
+      RATE_LIMIT_WINDOW: 60
+      RATE_LIMIT_MAX: 30
+      PYTHONPATH: /app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: >
+      bash -c "
+      echo '🔧 Installing dependencies...' &&
+      apt-get update -qq &&
+      apt-get install -y -qq --no-install-recommends gcc libpq-dev &&
+      pip install --no-cache-dir --quiet -r requirements.txt &&
+      echo '⏳ Waiting for database...' &&
+      sleep 10 &&
+      echo '📝 Running migrations...' &&
+      python -m flask db init || true &&
+      python -m flask db migrate -m 'Initial migration' || true &&
+      python -m flask db upgrade &&
+      echo '✅ Starting Gunicorn server...' &&
+      gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - app:app
+      "
+    networks:
+      - viruscan_network
+
+  adminer:
+    image: adminer:latest
+    container_name: viruscan_adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    networks:
+      - viruscan_network
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+volumes:
+  postgres_data:
+
+networks:
+  viruscan_network:
+    driver: bridge
