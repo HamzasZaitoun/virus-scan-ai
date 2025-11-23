@@ -1,17 +1,18 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from flask_migrate import Migrate
 import os, re, socket, ipaddress, time
 from urllib.parse import urlparse
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import config
-from models import db, Scan, Feedback, ContactMessage
+from models import db, Scan, Feedback, ContactMessage, User
 
 app = Flask(__name__)
 app.config.from_object(config[os.getenv('FLASK_ENV', 'development')])
 
-CORS(app)
+CORS(app, supports_credentials=True)
 db.init_app(app)
 migrate = Migrate(app, db)
 
@@ -226,7 +227,150 @@ def analyze_app(pkg: str):
         "solutions": solutions
     }
 
-# ========== API ENDPOINTS ==========
+# ========== USER AUTHENTICATION ENDPOINTS ==========
+
+@app.post("/api/users/register")
+def register_user():
+    """Register a new user"""
+    data = request.get_json(force=True, silent=True) or {}
+    
+    email = (data.get("email") or "").strip().lower()
+    full_name = (data.get("full_name") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    password = data.get("password", "")
+    
+    # Validation
+    if not email or not full_name or not password:
+        return jsonify({"error": "Email, full name, and password are required"}), 400
+    
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+    
+    # Check if email already exists
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        return jsonify({"error": "Email already registered"}), 409
+    
+    # Create user
+    user = User(
+        email=email,
+        full_name=full_name,
+        phone=phone,
+        password_hash=generate_password_hash(password),
+        is_admin=False
+    )
+    
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({
+        "message": "Account created successfully",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name
+        }
+    }), 201
+
+@app.post("/api/users/login")
+def login_user():
+    """Login user"""
+    data = request.get_json(force=True, silent=True) or {}
+    
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password", "")
+    
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+    
+    # Find user
+    user = User.query.filter_by(email=email).first()
+    
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({"error": "Invalid email or password"}), 401
+    
+    # Update last login
+    user.last_login = datetime.utcnow()
+    db.session.commit()
+    
+    # Store user in session
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    session['is_admin'] = user.is_admin
+    
+    return jsonify({
+        "message": "Login successful",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_admin": user.is_admin
+        }
+    }), 200
+
+@app.post("/api/admin/login")
+def admin_login():
+    """Admin login"""
+    data = request.get_json(force=True, silent=True) or {}
+    
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password", "")
+    
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+    
+    # Find admin user
+    user = User.query.filter_by(email=email, is_admin=True).first()
+    
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({"error": "Invalid admin credentials"}), 401
+    
+    # Update last login
+    user.last_login = datetime.utcnow()
+    db.session.commit()
+    
+    # Store admin in session
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    session['is_admin'] = True
+    
+    return jsonify({
+        "message": "Admin login successful",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_admin": True
+        }
+    }), 200
+
+@app.post("/api/users/logout")
+def logout_user():
+    """Logout user"""
+    session.clear()
+    return jsonify({"message": "Logged out successfully"}), 200
+
+@app.get("/api/users/me")
+def get_current_user():
+    """Get current logged-in user"""
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "is_admin": user.is_admin
+    }), 200
+
+# ========== SCAN ENDPOINTS ==========
 
 @app.post("/api/scan/url")
 def scan_url():
@@ -361,9 +505,29 @@ def submit_contact():
     
     return jsonify({"message": "Message sent", "id": contact.id}), 201
 
+# ========== ADMIN ENDPOINTS ==========
+
+@app.get("/api/admin/users")
+def get_all_users():
+    """Get all users (admin only)"""
+    if not session.get('is_admin'):
+        return jsonify({"error": "Admin access required"}), 403
+    
+    users = User.query.order_by(User.created_at.desc()).all()
+    return jsonify([{
+        "id": u.id,
+        "email": u.email,
+        "full_name": u.full_name,
+        "phone": u.phone,
+        "is_admin": u.is_admin,
+        "created_at": u.created_at.isoformat(),
+        "last_login": u.last_login.isoformat() if u.last_login else None
+    } for u in users])
+
 @app.get("/api/admin/stats")
 def admin_stats():
     """Admin dashboard statistics"""
+    total_users = User.query.count()
     total_scans = Scan.query.count()
     total_feedback = Feedback.query.count()
     total_contacts = ContactMessage.query.count()
@@ -373,6 +537,7 @@ def admin_stats():
     ).count()
     
     return jsonify({
+        "total_users": total_users,
         "total_scans": total_scans,
         "total_feedback": total_feedback,
         "total_contacts": total_contacts,

@@ -212,93 +212,252 @@
 </div>
 
 <script>
-  /* ---------------------------
-      Modal + Auth behavior
-     --------------------------- */
-  const showModal = (el) => { el.classList.add('show'); el.setAttribute('aria-hidden','false'); }
-  const hideModal = (el) => { el.classList.remove('show'); el.setAttribute('aria-hidden','true'); }
+  const API_BASE = "http://127.0.0.1:8000/api";
 
-  const authModal = document.getElementById('authModal');
+/* ---------------------------
+   Modal + Auth behavior
+--------------------------- */
+const showModal = (el) => { el.classList.add('show'); el.setAttribute('aria-hidden','false'); }
+const hideModal = (el) => { el.classList.remove('show'); el.setAttribute('aria-hidden','true'); }
 
-  // openers
-  document.getElementById('openLogin').addEventListener('click', ()=> {
-    document.getElementById('loginFields').style.display='block';
-    document.getElementById('signupFields').style.display='none';
-    document.getElementById('authTitle').innerHTML = 'Sign in to <span style="color:#a8dadc">ViruScan AI</span>';
-    showModal(authModal);
-  });
+const authModal = document.getElementById('authModal');
 
-  document.getElementById('openSignup').addEventListener('click', (e)=> {
-    e.preventDefault();
-    document.getElementById('signupFields').style.display='block';
-    document.getElementById('loginFields').style.display='none';
-    document.getElementById('authTitle').innerHTML = 'Create your <span style="color:#a8dadc">ViruScan AI</span> account';
-    showModal(authModal);
-  });
+// openers
+document.getElementById('openLogin').addEventListener('click', ()=> {
+  document.getElementById('loginFields').style.display='block';
+  document.getElementById('signupFields').style.display='none';
+  document.getElementById('authTitle').innerHTML = 'Sign in to <span style="color:#a8dadc">ViruScan AI</span>';
+  showModal(authModal);
+});
 
-  // Switch links
-  document.getElementById('switchToSignup').addEventListener('click', (e)=> {
-    e.preventDefault();
-    document.getElementById('loginFields').style.display='none';
-    document.getElementById('signupFields').style.display='block';
-    document.getElementById('authTitle').innerHTML = 'Create your <span style="color:#a8dadc">ViruScan AI</span> account';
-  });
-  document.getElementById('switchToLogin').addEventListener('click', (e)=> {
-    e.preventDefault();
-    document.getElementById('signupFields').style.display='none';
-    document.getElementById('loginFields').style.display='block';
-    document.getElementById('authTitle').innerHTML = 'Sign in to <span style="color:#a8dadc">ViruScan AI</span>';
-  });
+document.getElementById('openSignup').addEventListener('click', (e)=> {
+  e.preventDefault();
+  document.getElementById('signupFields').style.display='block';
+  document.getElementById('loginFields').style.display='none';
+  document.getElementById('authTitle').innerHTML = 'Create your <span style="color:#a8dadc">ViruScan AI</span> account';
+  showModal(authModal);
+});
 
-  // Sign up behavior
-  const signupBtn = document.getElementById('signupBtn');
-  const suPassword = document.getElementById('suPassword');
-  const suConfirm = document.getElementById('suConfirm');
-  const suFullName = document.getElementById('suFullName');
-  const suEmail = document.getElementById('suEmail');
-  const suPhone = document.getElementById('suPhone');
-  const suError = document.getElementById('suError');
-  const countryCode = document.getElementById('countryCode');
+// Switch links
+document.getElementById('switchToSignup').addEventListener('click', (e)=> {
+  e.preventDefault();
+  document.getElementById('loginFields').style.display='none';
+  document.getElementById('signupFields').style.display='block';
+  document.getElementById('authTitle').innerHTML = 'Create your <span style="color:#a8dadc">ViruScan AI</span> account';
+});
+document.getElementById('switchToLogin').addEventListener('click', (e)=> {
+  e.preventDefault();
+  document.getElementById('signupFields').style.display='none';
+  document.getElementById('loginFields').style.display='block';
+  document.getElementById('authTitle').innerHTML = 'Sign in to <span style="color:#a8dadc">ViruScan AI</span>';
+});
 
-  signupBtn.addEventListener('click', ()=>{
-    suError.style.display='none';
-    const name = suFullName.value.trim();
-    const email = suEmail.value.trim();
-    const pass = suPassword.value;
-    const confirm = suConfirm.value;
-    const phone = suPhone.value.trim();
-    const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
+/* ---------------------------
+   SIGN UP - NOW WITH BACKEND
+--------------------------- */
+const signupBtn = document.getElementById('signupBtn');
+const suPassword = document.getElementById('suPassword');
+const suConfirm = document.getElementById('suConfirm');
+const suFullName = document.getElementById('suFullName');
+const suEmail = document.getElementById('suEmail');
+const suPhone = document.getElementById('suPhone');
+const suError = document.getElementById('suError');
+const countryCode = document.getElementById('countryCode');
 
-    if(!name || !email || !pass || !confirm || !phone){
-      suError.textContent = '⚠️ Please fill all required fields.';
-      suError.style.display='block';
-      return;
+signupBtn.addEventListener('click', async ()=>{
+  suError.style.display='none';
+  const name = suFullName.value.trim();
+  const email = suEmail.value.trim();
+  const pass = suPassword.value;
+  const confirm = suConfirm.value;
+  const phone = suPhone.value.trim();
+  const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
+
+  if(!name || !email || !pass || !confirm || !phone){
+    suError.textContent = '⚠️ Please fill all required fields.';
+    suError.style.display='block';
+    return;
+  }
+  if(pass.length < 6){
+    suError.textContent = '⚠️ Password must be at least 6 characters.';
+    suError.style.display='block';
+    return;
+  }
+  if(pass !== confirm){
+    suError.textContent = '⚠️ Passwords do not match.';
+    suError.style.display='block';
+    return;
+  }
+  
+  const fullPhone = prefix + phone;
+
+  // ✅ NOW CALL BACKEND API
+  try {
+    signupBtn.disabled = true;
+    signupBtn.textContent = 'Creating account...';
+
+    const response = await fetch(`${API_BASE}/users/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        email: email,
+        full_name: name,
+        phone: fullPhone,
+        password: pass
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Registration failed');
     }
-    if(pass.length < 6){
-      suError.textContent = '⚠️ Password must be at least 6 characters.';
-      suError.style.display='block';
-      return;
-    }
-    if(pass !== confirm){
-      suError.textContent = '⚠️ Passwords do not match.';
-      suError.style.display='block';
-      return;
-    }
-    // دمج رمز الدولة مع الرقم
-    const fullPhone = prefix + phone;
 
-    // عند تغيير الدولة، حدّث رمز الدولة تلقائيًا داخل خانة رقم الهاتف
-    countryCode.addEventListener('change', () => {
-      const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
-  // إذا الخانة فاضية أو فيها رمز سابق، استبدله
-  if (suPhone.value.startsWith('+')) {
-    suPhone.value = prefix + suPhone.value.replace(/^\+\d+/, '');
-  } else {
-    suPhone.value = prefix;
+    // Success
+    alert(`✅ Account created successfully!\nEmail: ${email}\nWelcome, ${name}!`);
+    
+    // Auto-login after signup
+    await loginUserAfterSignup(email, pass);
+    
+    hideModal(authModal);
+    suFullName.value = suEmail.value = suPassword.value = suConfirm.value = suPhone.value = '';
+    
+  } catch (error) {
+    suError.textContent = '❌ ' + error.message;
+    suError.style.display = 'block';
+  } finally {
+    signupBtn.disabled = false;
+    signupBtn.textContent = 'Create account';
   }
 });
 
-// عند التركيز على الخانة، إذا كانت فاضية، أضف رمز الدولة الحالي
+// Auto-login helper function
+async function loginUserAfterSignup(email, password) {
+  try {
+    const response = await fetch(`${API_BASE}/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = 'dashboard.html';
+    }
+  } catch (error) {
+    console.error('Auto-login failed:', error);
+    window.location.href = 'dashboard.html';
+  }
+}
+
+/* ---------------------------
+   SIGN IN - NOW WITH BACKEND
+--------------------------- */
+const loginBtn = document.getElementById('loginBtn');
+
+loginBtn.addEventListener('click', async ()=>{
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  
+  if(!email || !pass){ 
+    alert('Please fill all fields'); 
+    return; 
+  }
+
+  try {
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in...';
+
+    const response = await fetch(`${API_BASE}/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password: pass })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
+
+    // Store user info
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    alert(`✅ Welcome back, ${data.user.full_name}!`);
+    window.location.href = 'dashboard.html';
+
+  } catch (error) {
+    alert('❌ ' + error.message);
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign in';
+  }
+});
+
+/* ---------------------------
+   ADMIN LOGIN - NOW WITH BACKEND
+--------------------------- */
+document.getElementById("openAdmin").addEventListener("click", ()=>{
+  document.getElementById("adminModal").classList.add("show");
+});
+
+document.getElementById("closeAdmin").addEventListener("click", ()=>{
+  document.getElementById("adminModal").classList.remove("show");
+});
+
+document.getElementById("adminLoginBtn").addEventListener("click", async ()=> {
+  const email = document.getElementById("adminEmail").value.trim();
+  const pass = document.getElementById("adminPass").value;
+
+  if (!email || !pass) {
+    alert("❌ Please fill all fields");
+    return;
+  }
+
+  try {
+    const adminLoginBtn = document.getElementById("adminLoginBtn");
+    adminLoginBtn.disabled = true;
+    adminLoginBtn.textContent = 'Signing in...';
+
+    const response = await fetch(`${API_BASE}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password: pass })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Admin login failed');
+    }
+
+    // Store admin info
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('isAdmin', 'true');
+    
+    window.location.href = "admin-dashboard.html";
+
+  } catch (error) {
+    alert("❌ " + error.message);
+    document.getElementById("adminLoginBtn").disabled = false;
+    document.getElementById("adminLoginBtn").textContent = 'Sign in';
+  }
+});
+
+/* ---------------------------
+   Country Code Auto-fill
+--------------------------- */
+countryCode.addEventListener('change', ()=>{
+  const code = countryCode.selectedOptions[0].getAttribute('data-code');
+  suPhone.value = code + ' ';
+  suPhone.focus();
+});
+
 suPhone.addEventListener('focus', () => {
   const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
   if (!suPhone.value.startsWith('+')) {
@@ -306,163 +465,20 @@ suPhone.addEventListener('focus', () => {
   }
 });
 
-// منع كتابة أحرف غير الأرقام بعد الرمز
 suPhone.addEventListener('input', () => {
   const prefix = countryCode.selectedOptions[0].getAttribute('data-code');
   suPhone.value = prefix + suPhone.value.slice(prefix.length).replace(/\D/g, '');
 });
 
-    alert('✅ Account created successfully!\nEmail: ' + email + '\nPhone: ' + fullPhone);
-    window.location.href = 'dashboard.html';
-    hideModal(authModal);
-    suFullName.value = suEmail.value = suPassword.value = suConfirm.value = suPhone.value = '';
-  });
-  /* ---------------------------
-      Sign in behavior → Redirect Dashboard
-  --------------------------- */
-  const loginBtn = document.getElementById('loginBtn');
-  loginBtn.addEventListener('click', ()=>{
-    const email = document.getElementById('loginEmail').value.trim();
-    const pass = document.getElementById('loginPassword').value;
-    if(!email || !pass){ alert('Please fill all fields'); return; }
-    window.location.href = 'dashboard.html';
-  });
- document.addEventListener('DOMContentLoaded', () => {
-  const adminBtn = document.getElementById('adminBtn');
-  const adminModal = document.getElementById('adminModal');
-  const closeAdmin = document.getElementById('closeAdmin');
-  const adminLoginBtn = document.getElementById('adminLoginBtn');
-  const adminMsg = document.getElementById('adminMsg');});
-
-  //const adminModal = document.getElementById("adminModal");
-  document.getElementById("openAdmin").addEventListener("click", ()=>{
-    adminModal.classList.add("show");
-  });
-
-document.getElementById("closeAdmin").addEventListener("click", ()=>{
-  adminModal.classList.remove("show");
-});
-
-// تسجيل دخول الإدمن (مؤقت بدون backend)
-document.getElementById("adminLoginBtn").addEventListener("click", ()=> {
-  const email = document.getElementById("adminEmail").value;
-  const pass = document.getElementById("adminPass").value;
-
-  if(email === "admin@viruscan.com" && pass === "admin123"){
-    window.location.href = "admin-dashboard.html";
-  } else {
-    alert("❌ Incorrect admin login");
-  }
-});
-
-  /* ---------------------------
-      ✅ إضافات جديدة
-  --------------------------- */
-
-  // تفعيل زر × لإغلاق المودال
-  document.querySelectorAll('[data-close]').forEach(btn=>{
-    btn.addEventListener('click', ()=> hideModal(authModal));
-  });
-
-  // إغلاق المودال عند الضغط خارج الكارد
-  window.addEventListener('click', (e)=>{
-    if(e.target === authModal){ hideModal(authModal); }
-  });
-
-  // تعبئة رمز الدولة تلقائيًا في خانة الهاتف
-  countryCode.addEventListener('change', ()=>{
-    const code = countryCode.selectedOptions[0].getAttribute('data-code');
-    suPhone.value = code + ' ';
-    suPhone.focus();
-  });
- /* ---------------------------
-    Forgot Password Behavior
---------------------------- */
-const forgotPassword = document.getElementById('forgotPassword');
-const forgotModal = document.getElementById('forgotModal');
-const sendReset = document.getElementById('sendReset');
-const verifyCode = document.getElementById('verifyCode');
-const forgotInput = document.getElementById('forgotInput');
-const forgotMsg = document.getElementById('forgotMsg');
-const codeSection = document.getElementById('codeSection');
-const resetCode = document.getElementById('resetCode');
-
-let generatedCode = null;
-
-// فتح نافذة "نسيت كلمة السر"
-forgotPassword.addEventListener('click', (e)=>{
-  e.preventDefault();
-  forgotInput.value = '';
-  forgotMsg.style.display = 'none';
-  codeSection.style.display = 'none';
-  resetCode.value = '';
-  showModal(forgotModal);
-});
-
-// إرسال الكود
-sendReset.addEventListener('click', ()=>{
-  const value = forgotInput.value.trim();
-  if(!value){
-    alert('⚠️ Please enter your email or phone number.');
-    return;
-  }
-
-  // إنشاء كود عشوائي
-  generatedCode = Math.floor(100000 + Math.random() * 900000);
-  forgotMsg.textContent = `✅ A reset code has been sent to ${value}`;
-  forgotMsg.style.display = 'block';
-  forgotMsg.style.color = '#9aff9a';
-  
-  // إظهار خانة الكود
-  codeSection.style.display = 'block';
-  console.log("Generated code (for testing):", generatedCode);
-});
-
-// التحقق من الكود
-verifyCode.addEventListener('click', ()=>{
-  if(resetCode.value.trim() === ''){
-    alert('⚠️ Please enter the verification code.');
-    return;
-  }
-
-  if(parseInt(resetCode.value) === generatedCode){
-    forgotMsg.textContent = '✅ Code verified! You can now reset your password.';
-    forgotMsg.style.display = 'block';
-    forgotMsg.style.color = '#9aff9a';
-  } else {
-    forgotMsg.textContent = '❌ Incorrect code. Please try again.';
-    forgotMsg.style.display = 'block';
-    forgotMsg.style.color = '#ff9999';
-  }
-});
-
-// زر الإغلاق
-document.querySelector('#forgotModal .close-btn').addEventListener('click', ()=>{
-  hideModal(forgotModal);
-}); 
-const homeBtn = document.querySelector('nav ul li a.active');
-const dropdown = document.querySelector('.dropdown-content');
 /* ---------------------------
-   HELP MODAL OPEN / CLOSE
+   Close modal handlers
 --------------------------- */
-
-const helpBtn = document.getElementById("helpBtn");
-const helpModal = document.getElementById("helpModal");
-
-// فتح المودال
-helpBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  helpModal.classList.add("show");
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=> hideModal(authModal));
 });
 
-// إغلاق المودال
-helpModal.querySelector("[data-close]").addEventListener("click", () => {
-  helpModal.classList.remove("show");
-});
-
-// إغلاق عند الضغط خارج الكارد
-window.addEventListener("click", (e) => {
-  if (e.target === helpModal) helpModal.classList.remove("show");
+window.addEventListener('click', (e)=>{
+  if(e.target === authModal){ hideModal(authModal); }
 });
 
 /* ---------------------------

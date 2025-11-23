@@ -181,269 +181,195 @@
 </div>
 
 <script>
-/* ============================
-   Utility functions
-============================ */
-const openModal = (id) => {
-  document.getElementById(id).classList.add("show");
-};
-const closeModal = (id) => {
-  document.getElementById(id).classList.remove("show");
-};
+const API_BASE = "http://127.0.0.1:8000/api";
 
-/* ============================
-   NAVBAR BUTTONS
-============================ */
+let users = [];
+let feedback = [];
+let scans = [];
 
-// ---- Help ----
-document.getElementById("dashHelpBtn").addEventListener("click", () => {
-  openModal("dashHelpModal");
-});
-
-document.querySelectorAll('[data-close="dashHelpModal"]').forEach(btn => {
-  btn.addEventListener("click", () => closeModal("dashHelpModal"));
-});
-
-// ---- Contact Us ----
-document.getElementById("contactBtn").addEventListener("click", () => {
-  openModal("contactModal");
-});
-document.querySelectorAll('[data-close="contactModal"]').forEach(btn => {
-  btn.addEventListener("click", () => closeModal("contactModal"));
-});
-
-document.getElementById("sendContact").addEventListener("click", () => {
-  let name = document.getElementById("cName").value.trim();
-  let email = document.getElementById("cEmail").value.trim();
-  let msg = document.getElementById("cMsg").value.trim();
-
-  if (!name || !email || !msg) {
-    alert("⚠️ Please fill all fields.");
+// Check if user is admin
+window.addEventListener('DOMContentLoaded', async () => {
+  const isAdmin = localStorage.getItem('isAdmin');
+  
+  if (!isAdmin) {
+    alert('❌ Admin access required');
+    window.location.href = 'index.html';
     return;
   }
 
-  alert("✅ Message sent successfully!");
-  document.getElementById("cName").value = "";
-  document.getElementById("cEmail").value = "";
-  document.getElementById("cMsg").value = "";
-  closeModal("contactModal");
+  // Load all data
+  await loadStats();
+  await loadUsers();
+  await loadFeedback();
+  await loadScans();
 });
 
-// ---- Feedback ----
-let stars = document.querySelectorAll("#starRating .star");
-let feedbackRating = 0;
+// ========== LOAD DATA FROM BACKEND ==========
 
-document.getElementById("feedbackBtn").addEventListener("click", () => {
-  openModal("feedbackModal");
-});
-
-stars.forEach((star) => {
-  star.addEventListener("click", () => {
-    feedbackRating = parseInt(star.dataset.value);
-    stars.forEach((s) => s.classList.remove("active"));
-    stars.forEach((s) => {
-      if (parseInt(s.dataset.value) <= feedbackRating) {
-        s.classList.add("active");
-      }
-    });
-  });
-});
-let fbStars = document.querySelectorAll('#feedbackModal .star');
-let fbRating = 0;
-
-fbStars.forEach(star => {
-  star.addEventListener("click", () => {
-    fbRating = parseInt(star.dataset.value);
-
-    fbStars.forEach(s => s.classList.remove("active"));
-    fbStars.forEach(s => {
-      if (parseInt(s.dataset.value) <= fbRating) {
-        s.classList.add("active");
-      }
-    });
-  });
-});
-
-document.getElementById("submitFeedback").addEventListener("click", () => {
-  const text = document.getElementById("feedbackText").value.trim();
-
-  if (feedbackRating === 0) {
-    alert("⚠️ Please choose a rating first.");
-    return;
-  }
-
-  alert("⭐ Thanks for your feedback!");
-  feedbackRating = 0;
-  stars.forEach((s) => s.classList.remove("active"));
-  document.getElementById("feedbackText").value = "";
-  closeModal("feedbackModal");
-});
-
-document.querySelectorAll('[data-close="feedbackModal"]').forEach(btn => {
-  btn.addEventListener("click", () => closeModal("feedbackModal"));
-});
-
-// ---- History ----
-document.getElementById("historyBtn").addEventListener("click", () => {
-  loadFullHistory();
-  openModal("historyModal");
-});
-
-document.querySelectorAll('[data-close="historyModal"]').forEach(btn => {
-  btn.addEventListener("click", () => closeModal("historyModal"));
-});
- 
-/* ============================
-   UNIVERSAL SCAN BUTTON
-============================ */
-document.getElementById("scanBtn").addEventListener("click", async () => {
-  const input = document.getElementById("scanInput").value.trim();
-
-  if (!input) return alert("Please enter a URL or package name");
-
-  let endpoint = "";
-  let bodyData = {};
-
-  // URL detection
-  if (input.startsWith("http://") || input.startsWith("https://")) {
-    endpoint = "http://127.0.0.1:8000/api/scan/url";
-    bodyData = { url: input };
-  }
-  // package detection (com.example.app)
-  else if (input.includes(".")) {
-    endpoint = "http://127.0.0.1:8000/api/scan/app";
-    bodyData = { package: input };
-  }
-  else {
-    return alert("Invalid input. Enter a full URL or a package name.");
-  }
-
+async function loadStats() {
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bodyData)
+    const response = await fetch(`${API_BASE}/admin/stats`, {
+      credentials: 'include'
     });
+    
+    if (!response.ok) {
+      throw new Error('Failed to load stats');
+    }
 
     const data = await response.json();
-
-    // Save to last scan
-    localStorage.setItem("lastScan", JSON.stringify(data));
-
-    // Save to dashboard history
-    let history = JSON.parse(localStorage.getItem("history") || "[]");
-    history.unshift({
-      target: data.target_value,
-      label: data.label,
-      score: data.risk_score,
-      time: new Date().toLocaleString()
-    });
-    localStorage.setItem("history", JSON.stringify(history));
-
-    // Go to results page
-    window.location.href = "results.html";
-
+    
+    document.getElementById("countUsers").textContent = data.total_users;
+    document.getElementById("countFeedback").textContent = data.total_feedback;
+    document.getElementById("countScans").textContent = data.scans_today;
+    
   } catch (error) {
-    alert("Scan failed: " + error.message);
+    console.error('Error loading stats:', error);
   }
-});
-
-/* ============================
-   HISTORY MANAGEMENT
-============================ */
-function saveToHistory(scan) {
-  let history = JSON.parse(localStorage.getItem("history") || "[]");
-
-  history.unshift({
-    target: scan.target_value,
-    score: scan.risk_score,
-    label: scan.label,
-    time: new Date().toLocaleString()
-  });
-
-  if (history.length > 50) history.pop();
-
-  localStorage.setItem("history", JSON.stringify(history));
-  updateDashboardStats();
-  loadLastFive();
 }
 
-function loadLastFive() {
-  let history = JSON.parse(localStorage.getItem("history") || "[]");
-  let lastFive = document.getElementById("lastFive");
-  lastFive.innerHTML = "";
+async function loadUsers() {
+  try {
+    const response = await fetch(`${API_BASE}/admin/users`, {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to load users');
+    }
 
-  history.slice(0, 5).forEach(item => {
-    lastFive.innerHTML += `
-      <li>
-        <strong>${item.target}</strong>  
-        — Score: ${item.score}  
-        <span style="color:#a8dadc">${item.time}</span>
-      </li>`;
-  });
+    users = await response.json();
+    renderUsers();
+    
+  } catch (error) {
+    console.error('Error loading users:', error);
+    document.querySelector("#usersTable tbody").innerHTML = 
+      '<tr><td colspan="4">Failed to load users</td></tr>';
+  }
 }
 
-function loadFullHistory() {
-  let history = JSON.parse(localStorage.getItem("history") || "[]");
-  let box = document.getElementById("fullHistory");
-  box.innerHTML = "";
+async function loadFeedback() {
+  try {
+    const response = await fetch(`${API_BASE}/feedback`, {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to load feedback');
+    }
 
-  if (history.length === 0) {
-    box.innerHTML = "<li>No history yet.</li>";
+    feedback = await response.json();
+    renderFeedback();
+    
+  } catch (error) {
+    console.error('Error loading feedback:', error);
+    document.querySelector("#fbTable tbody").innerHTML = 
+      '<tr><td colspan="4">Failed to load feedback</td></tr>';
+  }
+}
+
+async function loadScans() {
+  try {
+    const response = await fetch(`${API_BASE}/history?limit=100`, {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to load scans');
+    }
+
+    scans = await response.json();
+    renderScans();
+    
+  } catch (error) {
+    console.error('Error loading scans:', error);
+    document.querySelector("#scanTable tbody").innerHTML = 
+      '<tr><td colspan="5">Failed to load scans</td></tr>';
+  }
+}
+
+// ========== RENDER TABLES ==========
+
+function renderUsers() {
+  const tbody = document.querySelector("#usersTable tbody");
+  
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4">No users found</td></tr>';
     return;
   }
 
-  history.forEach(item => {
-    box.innerHTML += `
-      <li>
-        <b>${item.target}</b> — ${item.label} (${item.score})
-        <br><small>${item.time}</small>
-      </li>`;
-  });
+  tbody.innerHTML = users.map((u, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${u.full_name}</td>
+      <td>${u.email}</td>
+      <td>${new Date(u.created_at).toLocaleDateString()}</td>
+    </tr>
+  `).join("");
 }
 
-function updateDashboardStats() {
-  let history = JSON.parse(localStorage.getItem("history") || "[]");
+function renderFeedback() {
+  const tbody = document.querySelector("#fbTable tbody");
+  
+  if (feedback.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4">No feedback found</td></tr>';
+    return;
+  }
 
-  document.getElementById("totalScans").textContent = history.length;
-  document.getElementById("safeCount").textContent =
-    history.filter(h => h.label === "Safe").length;
-  document.getElementById("warnCount").textContent =
-    history.filter(h => h.label === "Warning").length;
-  document.getElementById("dangerCount").textContent =
-    history.filter(h => h.label === "Dangerous").length;
+  tbody.innerHTML = feedback.map((f, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${f.user_name || 'Guest'}</td>
+      <td>${"★".repeat(f.rating)}</td>
+      <td>${f.comment || 'No comment'}</td>
+    </tr>
+  `).join("");
 }
 
-/* ============================
-   ACCORDION (HELP)
-============================ */
-document.querySelectorAll(".acc-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const content = btn.nextElementSibling;
+function renderScans() {
+  const tbody = document.querySelector("#scanTable tbody");
+  
+  if (scans.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">No scans found</td></tr>';
+    return;
+  }
 
-    btn.classList.toggle("open");
+  tbody.innerHTML = scans.map((s, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>Anonymous</td>
+      <td>${s.target_value.substring(0, 50)}${s.target_value.length > 50 ? '...' : ''}</td>
+      <td>${s.label}</td>
+      <td>${new Date(s.created_at).toLocaleDateString()}</td>
+    </tr>
+  `).join("");
+}
 
-    if (content.style.maxHeight) {
-      content.style.maxHeight = null;
-    } else {
-      content.style.maxHeight = content.scrollHeight + "px";
-    }
-  });
+// ========== PAGE NAVIGATION ==========
+
+document.querySelectorAll(".navlink").forEach(link => {
+  link.onclick = () => {
+    document.querySelectorAll("section").forEach(s => s.style.display = "none");
+    document.querySelectorAll(".navlink").forEach(a => a.classList.remove("active"));
+    link.classList.add("active");
+    document.getElementById("page-" + link.dataset.page).style.display = "block";
+  };
 });
 
-/* ============================
-   SIGN OUT
-============================ */
-document.getElementById("signOut").addEventListener("click", () => {
+// ========== SIGN OUT ==========
+
+document.getElementById("signout").onclick = async () => {
+  try {
+    await fetch(`${API_BASE}/users/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+  
   localStorage.clear();
   window.location.href = "index.html";
-});
-
-/* ============================
-   INIT
-============================ */
-loadLastFive();
-updateDashboardStats();
+};
 
  </script> 
 </body>
