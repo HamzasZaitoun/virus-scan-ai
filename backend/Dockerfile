@@ -6,18 +6,26 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install only essential packages
+# Install essential packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py models.py config.py ./
+# Copy all backend code
+COPY . /app
 
+# Copy entrypoint and set permissions (must run as root!)
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Create folders and user
 RUN mkdir -p /app/uploads /app/migrations && \
     useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
@@ -25,4 +33,4 @@ RUN mkdir -p /app/uploads /app/migrations && \
 USER appuser
 EXPOSE 8000
 
-CMD ["sh", "-c", "sleep 10 && (flask db upgrade || (flask db init && flask db migrate -m 'Initial' && flask db upgrade)) && gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - app:app"]
+CMD ["/app/entrypoint.sh"]

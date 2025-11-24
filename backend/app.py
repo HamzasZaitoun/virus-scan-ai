@@ -3,8 +3,9 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import os, re, socket, ipaddress, time
 from urllib.parse import urlparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 from config import config
 from models import db, Scan, Feedback, ContactMessage, User
@@ -12,7 +13,18 @@ from models import db, Scan, Feedback, ContactMessage, User
 app = Flask(__name__)
 app.config.from_object(config[os.getenv('FLASK_ENV', 'development')])
 
-CORS(app, supports_credentials=True)
+# --- NEW/FIXED CORS CONFIGURATION ---
+CORS(app, 
+     origins=[
+         "http://127.0.0.1:5500", 
+         "http://localhost:5500"
+     ], 
+     supports_credentials=True,
+     # This explicitly allows the headers your front-end needs
+     allow_headers=["Content-Type", "Authorization"] 
+)
+# ------------------------------------
+
 db.init_app(app)
 migrate = Migrate(app, db)
 
@@ -29,6 +41,39 @@ BAD_TLDS = [
     ".loan", ".kim", ".work"
 ]
 
+# Add OPTIONS handler for all routes
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    if origin:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
+
+# DECORATORS
+def login_required(f):
+    """Require user to be logged in"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({"error": "Authentication required"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    """Require user to be admin"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({"error": "Authentication required"}), 401
+        if not session.get('is_admin', False):
+            return jsonify({"error": "Admin access required"}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+# UTILITY FUNCTIONS
 def too_many_requests(ip):
     """Rate limiting check"""
     now = time.time()
@@ -77,7 +122,7 @@ def gen_solutions(reasons: list, target_type: str):
                 "time_minutes": 45
             }
         ]
-    else:  # app
+    else:
         return [
             {
                 "title": "Code signing & provenance checks",
@@ -136,7 +181,6 @@ def analyze_url(u: str):
     scheme = (parsed.scheme or "").lower()
     path_q = (parsed.path or "") + (("?" + parsed.query) if parsed.query else "")
     
-    # SSRF protection
     if not host or is_private_address(host):
         reasons.append("Blocked internal/private host")
         return {
@@ -146,35 +190,29 @@ def analyze_url(u: str):
             "solutions": gen_solutions(reasons, "url")
         }
     
-    # Protocol check
     if scheme != "https":
         reasons.append("No HTTPS")
         risk += 25
     
-    # TLD check
     for tld in BAD_TLDS:
         if host.endswith(tld):
             reasons.append(f"Suspicious top-level domain ({tld})")
             risk += 20
             break
     
-    # Domain randomness
     if re.search(r"\d{4,}", host) or len(re.findall(r"\d", host)) >= 6:
         reasons.append("High randomness in domain")
         risk += 10
     
-    # URL structure randomness
     if len(path_q) > 40 and re.search(r"[0-9A-Za-z]{16,}", path_q.replace("/", "")):
         reasons.append("High randomness in URL structure")
         risk += 10
     
-    # Suspicious keywords
     found_kw = [kw for kw in SUSPICIOUS_KEYWORDS if kw in (host + path_q)]
     if found_kw:
         reasons.append("Contains suspicious keywords: " + ", ".join(sorted(set(found_kw))[:4]))
         risk += 20
     
-    # Brand impersonation
     if any(b in host for b in ["paypal", "apple", "meta", "microsoft", "bank"]):
         reasons.append("Possible brand impersonation")
         risk += 15
@@ -195,23 +233,19 @@ def analyze_app(pkg: str):
     reasons = []
     risk = 0
     
-    # Package format validation
     if not re.fullmatch(r"[a-zA-Z]{2,}(?:\.[a-zA-Z0-9_]{2,}){1,}", pkg or ""):
         reasons.append("Invalid package name format")
         risk += 40
     
-    # Suspicious keywords
     found_kw = [kw for kw in SUSPICIOUS_KEYWORDS if kw in (pkg or "").lower()]
     if found_kw:
         reasons.append("Suspicious keywords in package name: " + ", ".join(sorted(set(found_kw))[:4]))
         risk += 20
     
-    # Package depth
     if pkg.count(".") >= 5:
         reasons.append("Unusual package depth")
         risk += 10
     
-    # Randomness
     if re.search(r"[0-9]{3,}", pkg):
         reasons.append("High randomness in package")
         risk += 10
@@ -227,132 +261,165 @@ def analyze_app(pkg: str):
         "solutions": solutions
     }
 
-# ========== USER AUTHENTICATION ENDPOINTS ==========
+# ========== AUTHENTICATION ENDPOINTS ==========
 
-@app.post("/api/users/register")
+@app.route("/api/users/register", methods=["POST", "OPTIONS"])
 def register_user():
     """Register a new user"""
-    data = request.get_json(force=True, silent=True) or {}
+    if request.method == "OPTIONS":
+        return "", 204
     
-    email = (data.get("email") or "").strip().lower()
-    full_name = (data.get("full_name") or "").strip()
-    phone = (data.get("phone") or "").strip()
-    password = data.get("password", "")
-    
-    # Validation
-    if not email or not full_name or not password:
-        return jsonify({"error": "Email, full name, and password are required"}), 400
-    
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters"}), 400
-    
-    # Check if email already exists
-    existing = User.query.filter_by(email=email).first()
-    if existing:
-        return jsonify({"error": "Email already registered"}), 409
-    
-    # Create user
-    user = User(
-        email=email,
-        full_name=full_name,
-        phone=phone,
-        password_hash=generate_password_hash(password),
-        is_admin=False
-    )
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    return jsonify({
-        "message": "Account created successfully",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name
-        }
-    }), 201
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        
+        email = (data.get("email") or "").strip().lower()
+        full_name = (data.get("full_name") or "").strip()
+        phone = (data.get("phone") or "").strip()
+        password = data.get("password", "")
+        
+        if not email or not full_name or not password:
+            return jsonify({"error": "Email, full name, and password are required"}), 400
+        
+        if len(password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters"}), 400
+        
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            return jsonify({"error": "Email already registered"}), 409
+        
+        user = User(
+            email=email,
+            full_name=full_name,
+            phone=phone,
+            password_hash=generate_password_hash(password),
+            is_admin=False
+        )
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": "Account created successfully",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "is_admin": False
+            }
+        }), 201
+    except Exception as e:
+        print(f"Registration error: {e}")
+        return jsonify({"error": str(e)}), 500
 
-@app.post("/api/users/login")
+@app.route("/api/users/login", methods=["POST", "OPTIONS"])
 def login_user():
     """Login user"""
-    data = request.get_json(force=True, silent=True) or {}
+    if request.method == "OPTIONS":
+        return "", 204
     
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password", "")
-    
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
-    
-    # Find user
-    user = User.query.filter_by(email=email).first()
-    
-    if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({"error": "Invalid email or password"}), 401
-    
-    # Update last login
-    user.last_login = datetime.utcnow()
-    db.session.commit()
-    
-    # Store user in session
-    session['user_id'] = user.id
-    session['user_email'] = user.email
-    session['is_admin'] = user.is_admin
-    
-    return jsonify({
-        "message": "Login successful",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "is_admin": user.is_admin
-        }
-    }), 200
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password", "")
+        
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if not user or not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "Invalid email or password"}), 401
+        
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        
+        session.clear()
+        session['user_id'] = user.id
+        session['user_email'] = user.email
+        session['user_name'] = user.full_name
+        session['is_admin'] = user.is_admin
+        session.permanent = True
+        
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "is_admin": user.is_admin
+            }
+        }), 200
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({"error": str(e)}), 500
 
-@app.post("/api/admin/login")
+@app.route("/api/admin/login", methods=["POST", "OPTIONS"])
 def admin_login():
     """Admin login"""
-    data = request.get_json(force=True, silent=True) or {}
+    if request.method == "OPTIONS":
+        return "", 204
     
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password", "")
-    
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
-    
-    # Find admin user
-    user = User.query.filter_by(email=email, is_admin=True).first()
-    
-    if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({"error": "Invalid admin credentials"}), 401
-    
-    # Update last login
-    user.last_login = datetime.utcnow()
-    db.session.commit()
-    
-    # Store admin in session
-    session['user_id'] = user.id
-    session['user_email'] = user.email
-    session['is_admin'] = True
-    
-    return jsonify({
-        "message": "Admin login successful",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "is_admin": True
-        }
-    }), 200
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password", "")
+        
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            return jsonify({"error": "Invalid admin credentials"}), 401
+        
+        if not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "Invalid admin credentials"}), 401
+        
+        if not user.is_admin:
+            return jsonify({"error": "Admin access required"}), 403
+        
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        
+        session.clear()
+        session['user_id'] = user.id
+        session['user_email'] = user.email
+        session['user_name'] = user.full_name
+        session['is_admin'] = True
+        session.permanent = True
+        
+        return jsonify({
+            "success": True,
+            "message": "Admin login successful",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "is_admin": True
+            }
+        }), 200
+    except Exception as e:
+        print(f"Admin login error: {e}")
+        return jsonify({"error": str(e)}), 500
 
-@app.post("/api/users/logout")
+@app.route("/api/users/logout", methods=["POST", "OPTIONS"])
 def logout_user():
     """Logout user"""
+    if request.method == "OPTIONS":
+        return "", 204
     session.clear()
-    return jsonify({"message": "Logged out successfully"}), 200
+    return jsonify({"success": True, "message": "Logged out successfully"}), 200
 
-@app.get("/api/users/me")
+@app.route("/api/users/me", methods=["GET", "OPTIONS"])
 def get_current_user():
     """Get current logged-in user"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
     user_id = session.get('user_id')
     
     if not user_id:
@@ -360,6 +427,7 @@ def get_current_user():
     
     user = User.query.get(user_id)
     if not user:
+        session.clear()
         return jsonify({"error": "User not found"}), 404
     
     return jsonify({
@@ -370,11 +438,30 @@ def get_current_user():
         "is_admin": user.is_admin
     }), 200
 
+@app.route("/api/session/check", methods=["GET", "OPTIONS"])
+def check_session():
+    """Check if user session is valid"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
+    if 'user_id' in session:
+        return jsonify({
+            "authenticated": True,
+            "is_admin": session.get('is_admin', False),
+            "user_id": session.get('user_id'),
+            "user_name": session.get('user_name')
+        }), 200
+    else:
+        return jsonify({"authenticated": False}), 401
+
 # ========== SCAN ENDPOINTS ==========
 
-@app.post("/api/scan/url")
+@app.route("/api/scan/url", methods=["POST", "OPTIONS"])
 def scan_url():
     """Scan a URL"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
     client_ip = request.remote_addr or "unknown"
     
     if too_many_requests(client_ip):
@@ -386,10 +473,8 @@ def scan_url():
     if not url:
         return jsonify({"error": "Missing url"}), 400
     
-    # Analyze
     res = analyze_url(url)
     
-    # Save to database
     scan = Scan(
         target_type="url",
         target_value=url,
@@ -409,9 +494,12 @@ def scan_url():
         **res
     }), 201
 
-@app.post("/api/scan/app")
+@app.route("/api/scan/app", methods=["POST", "OPTIONS"])
 def scan_app():
     """Scan an Android app package"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
     client_ip = request.remote_addr or "unknown"
     
     if too_many_requests(client_ip):
@@ -420,13 +508,11 @@ def scan_app():
     data = request.get_json(force=True, silent=True) or {}
     pkg = (data.get("package") or "").strip()
     
-    if not pkg:
+    if not url:
         return jsonify({"error": "Missing package"}), 400
     
-    # Analyze
     res = analyze_app(pkg)
     
-    # Save to database
     scan = Scan(
         target_type="app",
         target_value=pkg,
@@ -446,46 +532,54 @@ def scan_app():
         **res
     }), 201
 
-@app.get("/api/history")
+@app.route("/api/history", methods=["GET", "OPTIONS"])
 def history():
     """Get scan history"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
     limit = request.args.get('limit', 100, type=int)
-    limit = min(limit, 500)  # Max 500
+    limit = min(limit, 500)
     
     scans = Scan.query.order_by(Scan.created_at.desc()).limit(limit).all()
     return jsonify([scan.to_dict() for scan in scans])
 
-@app.post("/api/feedback")
-def submit_feedback():
-    """Submit user feedback"""
-    data = request.get_json(force=True, silent=True) or {}
+@app.route("/api/feedback", methods=["GET", "POST", "OPTIONS"])
+def feedback_route():
+    """Handle feedback"""
+    if request.method == "OPTIONS":
+        return "", 204
     
-    user_name = data.get("user_name", "Guest")
-    rating = data.get("rating")
-    comment = data.get("comment", "")
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        
+        user_name = data.get("user_name", "Guest")
+        rating = data.get("rating")
+        comment = data.get("comment", "")
+        
+        if not rating or not (1 <= int(rating) <= 5):
+            return jsonify({"error": "Invalid rating (1-5)"}), 400
+        
+        feedback = Feedback(
+            user_name=user_name,
+            rating=int(rating),
+            comment=comment
+        )
+        db.session.add(feedback)
+        db.session.commit()
+        
+        return jsonify({"message": "Feedback submitted", "id": feedback.id}), 201
     
-    if not rating or not (1 <= int(rating) <= 5):
-        return jsonify({"error": "Invalid rating (1-5)"}), 400
-    
-    feedback = Feedback(
-        user_name=user_name,
-        rating=int(rating),
-        comment=comment
-    )
-    db.session.add(feedback)
-    db.session.commit()
-    
-    return jsonify({"message": "Feedback submitted", "id": feedback.id}), 201
+    else:  # GET
+        feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).limit(100).all()
+        return jsonify([fb.to_dict() for fb in feedbacks])
 
-@app.get("/api/feedback")
-def get_feedback():
-    """Get all feedback"""
-    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).limit(100).all()
-    return jsonify([fb.to_dict() for fb in feedbacks])
-
-@app.post("/api/contact")
+@app.route("/api/contact", methods=["POST", "OPTIONS"])
 def submit_contact():
     """Submit contact message"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
     data = request.get_json(force=True, silent=True) or {}
     
     name = data.get("name", "").strip()
@@ -507,11 +601,12 @@ def submit_contact():
 
 # ========== ADMIN ENDPOINTS ==========
 
-@app.get("/api/admin/users")
+@app.route("/api/admin/users", methods=["GET", "OPTIONS"])
+@admin_required
 def get_all_users():
     """Get all users (admin only)"""
-    if not session.get('is_admin'):
-        return jsonify({"error": "Admin access required"}), 403
+    if request.method == "OPTIONS":
+        return "", 204
     
     users = User.query.order_by(User.created_at.desc()).all()
     return jsonify([{
@@ -524,9 +619,13 @@ def get_all_users():
         "last_login": u.last_login.isoformat() if u.last_login else None
     } for u in users])
 
-@app.get("/api/admin/stats")
+@app.route("/api/admin/stats", methods=["GET", "OPTIONS"])
+@admin_required
 def admin_stats():
     """Admin dashboard statistics"""
+    if request.method == "OPTIONS":
+        return "", 204
+    
     total_users = User.query.count()
     total_scans = Scan.query.count()
     total_feedback = Feedback.query.count()
@@ -553,5 +652,19 @@ def health():
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
+@app.route("/api/test", methods=["GET", "OPTIONS"])
+def test():
+    """Test endpoint to verify backend is running"""
+    if request.method == "OPTIONS":
+        return "", 204
+    return jsonify({"message": "Backend is running!", "timestamp": datetime.utcnow().isoformat()}), 200
+
 if __name__ == "__main__":
+    print("=" * 60)
+    print("🚀 Starting ViruScan AI Backend")
+    print("=" * 60)
+    print(f"📍 API Base URL: http://127.0.0.1:8000")
+    print(f"🔧 Test endpoint: http://127.0.0.1:8000/api/test")
+    print(f"❤️  Health check: http://127.0.0.1:8000/health")
+    print("=" * 60)
     app.run(debug=True, host="0.0.0.0", port=8000)
